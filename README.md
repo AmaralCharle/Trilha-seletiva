@@ -25,6 +25,12 @@ npm run preview
 
 `npm test` executa os testes determinísticos de domínio e persistência. `npm run build` gera a pasta `dist`, com Phaser e recursos empacotados. `npm run preview` serve essa distribuição localmente. O jogo não usa CDN, autenticação ou backend para sua mecânica. O relatório de verificações efetivamente executadas está em [docs/TESTES.md](docs/TESTES.md).
 
+## Atualização visual 2
+
+Versão do jogo: 2.0.0. Verificação desta rodada: 29 testes aprovados em quatro arquivos, build de produção concluído, tutorial e fase 1 completados no navegador integrado. A fase 1 terminou com 12/12, 100%, 220 pontos e três estrelas. O relatório separa essa verificação das evidências da primeira versão.
+
+A central agora usa uma oficina cartoon clara, bairro pela janela, piso de madeira, máquinas animadas, resíduos vetoriais individuais e Eco com quatro poses. As lixeiras têm símbolos e tampas animadas; a interface conserva os controles, regras e progresso. Fonte DejaVu Sans e aviso de licença estão em `public/assets`. As referências visuais fornecidas serviram apenas como direção criativa e não fazem parte dos assets. A verificação específica está em [docs/VISUAL_2.md](docs/VISUAL_2.md).
+
 ## Jogar
 
 Comece pelo tutorial de Eco. Selecione um objeto na esteira, prepare a embalagem quando houver restos e encaminhe-a à lixeira correta. Você pode arrastar e soltar; a interface também apresenta os atalhos de teclado. Cada lixeira tem nome e símbolo além da cor. A primeira fase não tem cronômetro. A partir da segunda, erro ou perda desconta três segundos; cinco acertos seguidos devolvem dois segundos. O terceiro acerto consecutivo já vale o dobro.
@@ -37,11 +43,12 @@ Ao terminar, a precisão considera todo o lote da tentativa, incluindo perdas e 
 src/
   config/     parâmetros dos níveis e regras centrais
   data/       catálogo de 27 resíduos e conteúdo educacional
-  scenes/     central de triagem no Phaser
+  scenes/     central de triagem e descarte no Phaser
+  entities/   ambiente em camadas e animações da oficina
   systems/    sessão determinística e persistência local
-  ui/         ilustrações vetoriais originais
+  ui/         resíduos, Eco, lixeiras e cenário em SVG
   main.js     navegação, telas e integração
-public/       recursos locais quando necessários
+public/assets/ fonte DejaVu Sans e aviso de licença
 tests/        testes automatizados
 docs/         GDD, arquitetura, auditoria, créditos e verificações
 ```

@@ -7,6 +7,7 @@ Trilha Seletiva — Missão Reciclagem é um serious game de triagem em uma cent
 | Dimensão e câmera | 2D, vista lateral da central de triagem |
 | Gênero | Simulação arcade educacional para um jogador |
 | Plataforma | Navegador desktop no Windows; mouse, teclado e toque |
+| Versão do jogo | 2.0.0 |
 | Tecnologia | JavaScript ES Modules, Phaser 3.90.0, Vite 6.4.6 e Vitest 4.1.12 |
 | Código entregue | https://github.com/AmaralCharle/Trilha-seletiva ; projeto com fonte, assets e testes |
 | Integrantes e matrículas | Pendente de informação do grupo; máximo de cinco integrantes |
@@ -176,11 +177,11 @@ Uma cidade brasileira contemporânea mantém uma central de triagem ilustrada. O
 
 | Entidade | Papel | Comportamento e aparência |
 |---|---|---|
-| Eco | Instrutor | Robô pequeno e amigável; orientações curtas e reação ao desempenho |
+| Eco | Instrutor | Robô pequeno e amigável, com poses idle, happy, guide e error; orientações curtas e expressão contextual |
 | Resíduo | Objeto da decisão | Ilustração e nome; deslocamento da esquerda para a direita |
-| Lixeira | Destino | Cor, nome e símbolo de material |
+| Lixeira | Destino | Cor, nome, símbolo do material e número de atalho; tampa ilustrada animada no descarte |
 | Esteira | Organizador do ritmo | Movimento contínuo e saída que contabiliza perdas |
-| Central | Contexto | Máquinas, tubulações, painéis e detalhes industriais ilustrados |
+| Central | Contexto | Oficina clara com máquinas, tubulações, janela em arco, bairro ao fundo, vegetação e piso de madeira |
 
 ## 10 Level design
 
@@ -205,25 +206,25 @@ A chegada espaçada dá tempo para reconhecer e agir. A progressão aumenta velo
 
 ### Direção de arte
 
-Cartoon 2D industrial ecológico, com formas arredondadas, vegetação e cores de destaque em uma base escura legível. A arte de objetos e de Eco é vetorial, criada no projeto com assistência de IA e renderizada localmente. A esteira e os equipamentos usam desenho e animação programáticos. Não se depende de serviços externos para carregar arte durante a partida.
+A direção visual 2 adota uma oficina ecológica cartoon clara: paredes verde-menta, piso de madeira quente, janela em arco para o bairro, máquinas arredondadas e vegetação. Os resíduos usam silhuetas individuais, contornos, gradientes de material, reflexos e sombras. Eco tem quatro poses: repouso, celebração, orientação e erro. As lixeiras têm corpo e tampa separados, símbolo do material, rótulo e número. As cinco imagens de referência fornecidas orientaram apenas a direção criativa; não são assets redistribuídos nem imagens embutidas no jogo. As ilustrações SVG são originais do projeto, geradas em código com assistência de IA e carregadas localmente. A fonte DejaVu Sans é empacotada com seu aviso de licença. Não se depende de serviços externos para carregar recursos durante a partida.
 
 ### Telas e HUD
 
-O fluxo inclui início, instruções e tutorial, mapa da trilha, jogo, pausa, resultado, revisão e resumo de progresso. O HUD comunica fase, pontos, tempo quando aplicável, sequência e quantidade resolvida. O resultado distingue aprovação e nova tentativa, exibe precisão e dificuldades, e permite repetir ou prosseguir. Configurações oferecem controle de áudio.
+O fluxo inclui início, instruções e tutorial, mapa da trilha, jogo, pausa, resultado, revisão e resumo de progresso. O HUD comunica fase, pontos, tempo quando aplicável, sequência e quantidade resolvida. O resultado distingue aprovação e nova tentativa, exibe precisão e dificuldades, e permite repetir ou prosseguir. Configurações oferecem controle de áudio. A interface visual 2 utiliza painéis claros, botões com relevo, trilha conectada, estados de fase atual, concluída e bloqueada, estrelas vetoriais e medalha de conclusão. O HUD conserva pontos, sequência, itens e tempo ou precisão; Eco muda de expressão conforme o retorno. Os controles e as condições das mecânicas permanecem iguais.
 
 ### Áudio e assets
 
-Os efeitos devem reforçar acerto, erro e interação sem transmitir informação exclusiva. Música ambiente é opcional e não é requisito para a mecânica. A origem e a licença dos materiais estão em `docs/CREDITOS.md`; recursos originais sem comprovação de licença não devem ser redistribuídos por presunção.
+Os efeitos reforçam acerto e erro sem transmitir informação exclusiva. Não houve alteração da síntese sonora nesta atualização visual. Música ambiente é opcional e não é requisito para a mecânica. A origem e a licença dos materiais estão em `docs/CREDITOS.md`; recursos originais sem comprovação de licença não devem ser redistribuídos por presunção.
 
 ## 12 Arquitetura técnica
 
 ### Organização e componentes
 
-A aplicação separa configuração, catálogo, domínio determinístico, armazenamento, cena Phaser e interface externa ao canvas. `src/main.js` coordena a navegação; `src/scenes/FactoryScene.js` desenha e atualiza a central; `src/systems/session.js` decide as regras; `src/systems/storage.js` salva e exporta resultados. `src/ui/art.js` contém as ilustrações originais. A descrição detalhada de dependências e funções consta em `docs/ARQUITETURA.md`.
+A aplicação separa configuração, catálogo, domínio determinístico, armazenamento, cena Phaser e interface externa ao canvas. `src/main.js` coordena a navegação; `src/scenes/FactoryScene.js` desenha e atualiza a central; `src/systems/session.js` decide as regras; `src/systems/storage.js` salva e exporta resultados. `src/ui/art.js` contém as ilustrações originais de resíduos, Eco e lixeiras. `src/ui/factoryArt.js` define oficina, cidade e engrenagens; `src/entities/FactoryEnvironment.js` compõe as camadas e suas animações. A renderização carrega os SVGs em texturas no início; não redesenha o SVG completo em cada quadro. A descrição detalhada de dependências e funções consta em `docs/ARQUITETURA.md`.
 
 ### Estados ciclo tempo e colisão
 
-A interface inicia uma tentativa com configuração e lote próprios. O ciclo de atualização do Phaser converte o delta de milissegundos para segundos, move os resíduos e avança o domínio. A soltura é comparada às regiões das lixeiras; uma saída da área útil registra perda. A pausa precisa interromper tanto simulação quanto cronômetro e entrada de classificação. O domínio impede contabilização duplicada e encerramentos concorrentes.
+A interface inicia uma tentativa com configuração e lote próprios. O ciclo de atualização do Phaser converte o delta de milissegundos para segundos, move os resíduos e avança o domínio. A soltura é comparada às regiões das lixeiras; uma saída da área útil registra perda. A pausa interrompe simulação, cronômetro, entrada de classificação e animações da cena. `FactoryEnvironment.update` mantém animações ambientais leves, como engrenagens, roletes, indicadores e movimento discreto do bairro; respeita a pausa e a preferência de movimento reduzido. Descartes usam animação de tampa, brilho e partículas; a cena limpa efeitos transitórios ao reiniciar ou voltar ao menu. O domínio impede contabilização duplicada e encerramentos concorrentes.
 
 ### Dados e persistência
 
@@ -248,7 +249,7 @@ A tabela foi conferida por inspeção dos arquivos da reconstrução. “Impleme
 |---|---|---|---|---|
 | Catálogo de 27 resíduos e dicas | 5, 6 | src/data/catalog.js | CATALOG, LOCAL_NOTICE | Implementado |
 | Cinco fases com quantidade, velocidade, intervalo, tempo e meta | 7 | src/config/levels.js | LEVELS | Implementado |
-| Cores, nomes e símbolos dos destinos | 2, 6 | src/config/levels.js; src/scenes/FactoryScene.js | BINS; FactoryScene.start | Implementado; a cena desenha nomes e números |
+| Cores, nomes e símbolos dos destinos | 2, 6 | src/config/levels.js; src/ui/art.js; src/scenes/FactoryScene.js | BINS; binBodySVG; FactoryScene.createBin | Implementado; desenho, rótulo e número |
 | Ordem balanceada e presença de confundíveis e preparação | 5, 7 | src/systems/session.js | buildDeck | Implementado |
 | Pontos 10 e multiplicador a partir do terceiro acerto | 6 | src/config/rules.js; src/systems/session.js | RULES; Session.resolve | Implementado |
 | Penalidade de 3 s e bônus de 2 s a cada cinco acertos | 6 | src/systems/session.js | Session.resolve, Session.miss | Implementado |
@@ -266,19 +267,32 @@ A tabela foi conferida por inspeção dos arquivos da reconstrução. “Impleme
 | Revisão sem cronômetro e priorização pela última decisão errada ou perdida, com frequência histórica no desempate | 5, 7 | src/main.js; src/systems/session.js | start; buildDeck | Implementado |
 | Pausa, Esc, retomada e pausa quando a página fica oculta | 6, 12 | src/main.js; src/systems/session.js; src/scenes/FactoryScene.js | pause, resume, visibilitychange; Session.tick; FactoryScene.update | Implementado |
 | Reinício e abandono sem recompensa | 6 | src/main.js; src/systems/storage.js | start, actions.restart, actions.abandon; saveAttempt | Implementado |
-| Feedback, partículas e sons opcionais | 5, 11 | src/main.js; src/scenes/FactoryScene.js | feedback, tone; FactoryScene.classify | Implementado |
+| Feedback, partículas e sons opcionais | 5, 11 | src/main.js; src/scenes/FactoryScene.js | feedback, tone; FactoryScene.classify, animateBin, feedbackParticles | Implementado |
 | Resultado, próxima fase e conclusão da jornada | 6, 9, 11 | src/main.js | finish, actions.next, stats | Implementado |
 | Histórico, erros por objeto e categoria e métricas | 12, 14 | src/systems/session.js; src/systems/storage.js | Session.finish; saveAttempt | Implementado |
 | Exportação CSV | 14 | src/systems/storage.js; src/main.js | exportCSV; actions.export | Implementado |
 | Áudio, volume e tela cheia quando suportada | 2, 11 | src/main.js; src/systems/storage.js | settings, tone, actions.sound, actions.fullscreen; saveSettings | Implementado |
 | Reset e aviso de armazenamento indisponível | 12 | src/systems/storage.js; src/main.js | resetProgress, loadProgress, persist; render, toast | Implementado |
-| Ilustrações locais e erro de carregamento | 11, 12 | src/ui/art.js; src/scenes/FactoryScene.js; src/main.js | itemSVG, ecoSVG; FactoryScene.preload; asset-error | Implementado |
+| Ilustrações locais e erro de carregamento | 11, 12 | src/ui/art.js; src/scenes/FactoryScene.js; src/main.js | itemSVG, ecoPoseSVG, binBodySVG, binLidSVG; FactoryScene.preload; asset-error | Implementado |
+| Oficina, cidade e engrenagens vetoriais | 9, 11 | src/ui/factoryArt.js | factorySVG, citySVG, gearSVG | Implementado por inspeção |
+| Camadas ambientais e movimento discreto | 9, 11, 12 | src/entities/FactoryEnvironment.js | FactoryEnvironment.constructor, showHero, update | Implementado por inspeção |
+| Poses contextuais de Eco | 9, 11 | src/ui/art.js; src/main.js | ecoPoseSVG; eco, feedback | Implementado por inspeção |
+| Tampas e resposta visual dos destinos | 6, 11 | src/scenes/FactoryScene.js | createBin, animateBin, feedbackParticles | Implementado por inspeção |
+| Limpeza de efeitos ao reiniciar ou sair | 6, 12 | src/scenes/FactoryScene.js | clearEffects, transient, destroyEffect, start, showMenu | Implementado por inspeção |
+| Preferência de movimento reduzido | 2, 11 | src/entities/FactoryEnvironment.js; src/scenes/FactoryScene.js; src/styles.css | FactoryEnvironment.update; animateBin, feedbackParticles; prefers-reduced-motion | Implementado por inspeção |
+| Estrelas, trilha e medalha da interface | 7, 11 | src/main.js; src/styles.css | starPath, stars, medal, map, finish, stats | Implementado por inspeção |
+| Fonte local redistribuída com aviso | 11, 16 | public/assets/DejaVuSans.ttf; public/assets/LICENCA_DejaVu.txt; src/styles.css | @font-face Local | Empacotado; licença preservada |
+
 
 ## 14 Testes e validação
 
 ### Validação técnica
 
-Foram executados 26 testes automatizados de domínio e persistência com resultado aprovado nesta etapa. Eles cobrem regras determinísticas e casos de borda; o resultado corresponde a três arquivos de teste executados com Vitest 4.1.12; o relatório técnico detalha os casos. Na verificação visual em navegador foram observados tutorial concluído com 100%, resultado de fase abaixo da meta com 12 itens contabilizados e classificação correta e incorreta por mouse, arraste e teclado na revisão. Também foram observados download do CSV, persistência de preferência de som após recarregar, preservação de tentativa da fase 1 e pausa, reinício e abandono da revisão. A verificação utilizou o navegador integrado baseado em Chromium; Chrome e Edge nativos não foram testados. A jornada de cinco fases foi validada no domínio automatizado, sem uma passagem manual completa pelas cinco fases no navegador. O build de produção foi servido localmente na porta 4173, e o menu com a arte carregou sem falha observada. Instalação e produção são registradas em `docs/TESTES.md`. Aprovação automatizada não equivale a teste com pessoa de fora do grupo.
+Na versão 2.0.0, foram executados 29 testes automatizados em quatro arquivos com Vitest 4.1.12: os 26 testes de domínio e persistência foram preservados e três testes de contrato dos assets foram acrescentados. Eles verificam ilustrações distintas para os 27 resíduos, quatro poses de Eco, separação entre corpo e tampa das lixeiras, camadas locais do cenário e codificação de Unicode. Os testes de contrato não substituem a inspeção visual da arte. O build de produção passou novamente após os ajustes finais. A distribuição foi servida na porta 4173: menu e cenário renderizaram, e os logs filtrados desse endereço não apresentaram erros observados.
+
+No navegador integrado baseado em Chromium, foi completada manualmente a fase 1 com 12 acertos em 12 itens, 100% de precisão, 220 pontos, três estrelas e nenhuma perda; o botão de próxima etapa apareceu. O tutorial foi concluído com três acertos e 40 pontos. Foram observados arraste do jornal até PAPEL, classificação pelas teclas 1 e 2 e bloqueio de classificação durante a pausa, com retomada posterior. Foram observados menu, trilha e revisão com cinco lixeiras em 960 × 540; menu, jogo e resultado em 1280 × 720; e menu em 1600 × 900. Em largura menor, a faixa decorativa do menu foi ocultada e a altura mínima do HUD ajustada para evitar sobreposição com rodapé e missão. As capturas do anexo usam 1280 × 720. Esses resultados técnicos foram obtidos durante a verificação do software; não são dados de participante externo.
+
+A verificação anterior da primeira versão registrou também download do CSV, preservação de preferência de som e tentativa após recarregar, reinício, abandono e abertura da distribuição de produção. Esses registros são históricos, identificados em `docs/TESTES.md`, e não constituem por si só repetição desses casos na apresentação nova. Chrome e Edge nativos não foram testados. A jornada das cinco fases permanece coberta pelo domínio automatizado, sem uma passagem manual completa pelas cinco fases no navegador. O acompanhamento da atualização visual está em `docs/VISUAL_2.md`.
 
 ### Teste com pessoa externa
 
@@ -297,7 +311,7 @@ Antes do teste, propõe-se comparar duas tentativas da mesma fase: redução de 
 
 ### Defeitos conhecidos
 
-O relatório técnico deve separar defeitos reproduzíveis de limitações do escopo. Ainda não há validação externa, auditoria integral de acessibilidade ou medição sustentada de desempenho em computadores de laboratório. O registro atualizado está em `docs/TESTES.md`.
+O relatório técnico deve separar defeitos reproduzíveis de limitações do escopo. Ainda não há validação externa, auditoria integral de acessibilidade, medição sustentada de FPS ou teste em computadores de laboratório. As três resoluções observadas não garantem adequação a todos os aparelhos, toque físico ou navegadores; Chrome e Edge nativos permanecem sem teste. O registro atualizado está em `docs/TESTES.md`.
 
 ## 15 Riscos limitações e próximos passos
 
@@ -329,7 +343,7 @@ Nenhum nome, matrícula ou distribuição de trabalho foi inventado. Cada integr
 
 ### Uso de IA e ferramentas
 
-Codex, da OpenAI, foi utilizado para analisar o projeto Pygame fornecido, propor o redesign, gerar código JavaScript, ilustrações vetoriais programáticas, testes automatizados e rascunhos de documentação. Os arquivos gerados estão no projeto de navegador. A revisão humana do grupo e as alterações feitas por seus integrantes devem ser registradas antes da entrega; o uso de IA não substitui essa responsabilidade. Vite, Phaser e Vitest são dependências de terceiros com suas licenças próprias.
+Codex, da OpenAI, foi utilizado para analisar o projeto Pygame fornecido, propor o redesign, gerar código JavaScript, ilustrações vetoriais programáticas, testes automatizados e rascunhos de documentação. Na atualização visual 2, a assistência incluiu os 27 resíduos, quatro poses de Eco, lixeiras com tampas separadas, oficina, cidade, engrenagens e interface. As cinco referências visuais serviram como direção criativa e não foram copiadas para os assets. DejaVu Sans é um recurso de terceiros redistribuído com o aviso Bitstream Vera/DejaVu preservado em public/assets; não é arte gerada por IA. Os arquivos gerados estão no projeto de navegador. A revisão humana do grupo e as alterações feitas por seus integrantes devem ser registradas antes da entrega; o uso de IA não substitui essa responsabilidade. Vite, Phaser e Vitest são dependências de terceiros com suas licenças próprias.
 
 ### Referências
 
@@ -378,27 +392,27 @@ const precision = this.deck.length ? this.correct / this.deck.length : 0;
 
 ## Anexo B Capturas reais
 
-As imagens seguintes foram capturadas da versão executada no navegador durante a verificação técnica. Elas documentam os estados observados; não representam um teste externo de aprendizagem.
+As imagens seguintes foram capturadas da versão 2.0.0 executada no navegador integrado, em 1280 × 720, durante a verificação técnica. Elas documentam a atualização visual 2 e os estados observados; não representam um teste externo de aprendizagem.
 
-![Tela inicial com central de triagem e entrada para a missão](capturas/menu.jpg)
+![Menu da atualização visual 2](capturas-v2/menu.jpg)
 
-Figura B1. Menu inicial com identidade visual, acesso à missão, instruções e configurações.
+Figura B1. Menu atual com oficina clara, Eco, identidade visual e entrada para a missão.
 
-![Mapa de progresso e fases](capturas/trilha.jpg)
+![Trilha com a segunda fase desbloqueada](capturas-v2/trilha.jpg)
 
-Figura B2. Trilha com cinco etapas, estrelas e bloqueio progressivo.
+Figura B2. Trilha atual com estrelas da fase 1 e fase 2 desbloqueada após aprovação.
 
-![Feedback de classificação correta](capturas/jogo-acerto.jpg)
+![Feedback de classificação correta no treino](capturas-v2/jogo-acerto.jpg)
 
-Figura B3. Cena de jogo com resíduo, lixeiras identificadas e retorno de acerto.
+Figura B3. Treino com HUD, resíduos individuais, símbolos de material nas lixeiras e retorno de acerto.
 
-![Feedback de item perdido na esteira](capturas/erro.jpg)
+![Feedback de classificação incorreta na revisão](capturas-v2/erro.jpg)
 
-Figura B4. Eco informa a perda de um item que saiu da esteira e orienta a próxima decisão.
+Figura B4. Balde plástico enviado a REJEITO na revisão; Eco muda de expressão e explica o destino pelo material.
 
-![Resultado de tentativa](capturas/resultado.jpg)
+![Resultado da fase 1 com três estrelas](capturas-v2/resultado.jpg)
 
-Figura B5. Resultado com precisão, contabilização do lote e opções de continuidade.
+Figura B5. Fase 1 concluída com 12/12, 100%, 220 pontos, três estrelas, zero perdas e opção de próxima etapa.
 
 ## Pendências para a entrega acadêmica
 

@@ -1,5 +1,20 @@
 # Verificações executadas
 
+## Versão 2.0.0 e atualização visual 2
+
+Nesta rodada, `npm test` concluiu com 29 testes aprovados em quatro arquivos: os 26 testes existentes e três contratos de arte em `tests/art.test.js`. Os novos casos verificam 27 SVGs distintos e sem recursos HTTP embutidos, quatro poses distintas de Eco, corpos e tampas separados para as lixeiras, camadas do ambiente e codificação de Unicode. `npm run build` passou.
+
+A verificação manual no navegador integrado baseado em Chromium completou a fase 1: 12/12 acertos, 100%, 220 pontos, três estrelas e zero perdas; o botão de próxima etapa foi exibido e a trilha mostrou a fase 2 desbloqueada. O tutorial foi concluído com 3/3 e 40 pontos. Arrastar o jornal até PAPEL, classificar pelas teclas 1 e 2 e pausar/retomar foram observados; a pausa bloqueou a classificação. Na revisão, enviar um balde plástico a REJEITO exibiu dica pelo material e Eco com expressão de erro. Cinco capturas em 1280×720 registram a nova apresentação em `docs/capturas-v2`. Não houve nova passagem manual por todas as cinco fases nem teste externo de aprendizagem.
+
+
+A verificação final observou menu, trilha e revisão com cinco lixeiras em 960×540; menu, jogo e resultado em 1280×720; e menu em 1600×900. Foram corrigidas duas sobreposições em largura até 1100: a faixa de estatísticas decorativas do menu deixou de disputar espaço com o rodapé, e a altura mínima do HUD foi ajustada para não cobrir a missão. `npm run build` passou novamente; a distribuição servida na porta 4173 renderizou menu e cenário, e seus logs filtrados não apresentaram erros observados. O diff Git confirmou ausência de alterações em domínio, configurações e dados. Não houve medição sustentada de FPS, teste em Chrome/Edge nativos ou toque em aparelho físico.
+
+As verificações específicas da arte e as pendências da rodada estão em `VISUAL_2.md`.
+
+## Registro histórico da primeira versão visual
+
+Os resultados abaixo pertencem à verificação anterior da primeira apresentação. Sua manutenção documenta a origem das evidências e não afirma que todos esses casos foram repetidos na atualização visual 2.
+
 Data: 19 de novembro de 2026. Ambiente: Windows, Node.js25.0.0, npm11.6.2; navegador integrado baseado em Chromium. Phaser3.90.0, Vite6.4.6, Vitest4.1.12.
 
 ## Automação

@@ -8,11 +8,24 @@ O modelo e a aula são materiais do professor Tiago Ruiz de Castro, da disciplin
 
 ## Arte e áudio da reconstrução
 
-As ilustrações de resíduos e de Eco em `src/ui/art.js`, os desenhos da central e os elementos de interface foram produzidos como código vetorial ou desenho programático para esta reconstrução, com assistência do Codex. Não são imagens obtidas de bancos externos, nem sprites Noto Emoji. As formas são editáveis no código e não exigem download de arte durante a execução.
+A atualização visual 2 usa ilustrações SVG originais geradas em código com assistência do Codex. As cinco imagens de referência fornecidas pelo usuário foram utilizadas apenas como direção criativa de estilo e composição; não foram incorporadas ao jogo, copiadas como texturas nem incluídas nos arquivos distribuídos. Não se atribui a elas licença de redistribuição, autoria do grupo ou condição de domínio público.
 
-Os efeitos sonoros da versão de navegador são sintetizados em tempo de execução por código. Não se presume licença de música externa e não se redistribui faixa musical de terceiros. Fontes de interface utilizam recursos disponíveis no sistema, salvo indicação contrária no pacote final.
+| Recurso | Arquivo real | Origem e observação |
+|---|---|---|
+| 27 resíduos distintos | src/ui/art.js, itemSVG | Desenho vetorial do projeto, com assistência de IA; silhuetas, contornos e gradientes de material |
+| Eco em quatro poses | src/ui/art.js, ecoPoseSVG | Robô original com repouso, celebração, orientação e erro |
+| Corpos e tampas de cinco lixeiras | src/ui/art.js, binBodySVG e binLidSVG | SVGs originais separados para permitir animação; símbolos de material desenhados em código |
+| Oficina, cidade e engrenagens | src/ui/factoryArt.js | SVGs originais do cenário, sem referências externas embutidas |
+| Estrelas, medalha e interface | src/main.js e src/styles.css | Geometria vetorial e estilos produzidos para o projeto |
+| Efeitos sonoros | src/main.js, tone | Osciladores Web Audio sintetizados localmente; sem faixa musical de terceiros |
+| Fonte DejaVu Sans | public/assets/DejaVuSans.ttf | Reaproveitada do pacote original; recurso de terceiros, sem alteração |
+| Aviso da fonte | public/assets/LICENCA_DejaVu.txt | Aviso Bitstream Vera/DejaVu preservado ao lado da fonte |
 
-Os PNGs Noto/DejaVu e WAVs do ZIP original foram inspecionados na auditoria e não precisam ser incluídos na reconstrução. Sua presença no original não concede licença geral ao novo projeto. Se o grupo decidir reaproveitá-los no futuro, deverá preservar os textos de licença aplicáveis e conferir a origem de cada recurso.
+As ilustrações permanecem editáveis no código e são convertidas em texturas na inicialização. Não há download de arte ou consulta a um gerador de imagens durante a partida. As animações ambientais são implementadas em `src/entities/FactoryEnvironment.js`; a separação de ambiente e descarte mantém a arte fora das regras determinísticas.
+
+A fonte DejaVu Sans contém copyright Bitstream e alterações DejaVu declaradas em domínio público no aviso fornecido. A licença Bitstream Vera permite reprodução e redistribuição da fonte com seus avisos e condições preservados; não é apropriado rotulá-la como fonte MIT ou como produção original de IA. O arquivo de aviso também inclui condições referentes a arquivos de empacotamento Debian; isso não muda a identificação da licença da fonte como Bitstream Vera/DejaVu. Fallbacks tipográficos do sistema podem ser utilizados se necessário.
+
+Os PNGs derivados de Noto Emoji e os WAVs do original foram inspecionados na auditoria e não são usados como arte principal ou áudio da reconstrução. A permissão de um recurso não implica licença geral sobre todo o ZIP original. Não há música de fundo externa nesta versão.
 
 ## Dependências de software
 
@@ -36,6 +49,6 @@ Consulta em 19/11/2026. As fontes descrevem seus contextos e não tornam univers
 
 ## Declaração de uso de IA
 
-Codex, da OpenAI, auxiliou a análise estática do original, o redesign da experiência, a geração de JavaScript, as ilustrações vetoriais programáticas, testes e documentação. A assistência abrange o projeto de navegador em `src`, `tests` e `docs`. O relatório técnico distingue testes automatizados de testes externos com pessoas.
+Codex, da OpenAI, auxiliou a análise estática do original, o redesign da experiência, a geração de JavaScript, as ilustrações vetoriais programáticas, testes e documentação. Na atualização visual 2, essa assistência abrange o novo ambiente em camadas, os resíduos individuais, as poses de Eco, as lixeiras com partes separadas e os estados da interface. A assistência abrange o projeto de navegador em `src`, `tests` e `docs`. O relatório técnico distingue testes automatizados de testes externos com pessoas.
 
 Os integrantes devem preencher seus nomes, matrículas e contribuições reais e registrar a revisão humana realizada. Não foram inventados entrevistas, participantes, aprovação de usuários, medições de aprendizagem ou resultados de desempenho em hardware não testado. A autoria e a responsabilidade da entrega acadêmica devem ser assumidas pelo grupo, que precisa saber explicar o material entregue.
