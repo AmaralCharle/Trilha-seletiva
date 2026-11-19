@@ -1,6 +1,6 @@
 # Arquitetura de Trilha Seletiva
 
-A aplicação separa regras determinísticas e recursos do navegador. A cena Phaser apresenta movimento e recebe entrada; o domínio decide se uma classificação é correta. A interface coordena telas e transforma resultados em progresso salvo. Essa separação permite testar pontuação, precisão e persistência sem renderizar o jogo.
+A versão usa Phaser 3.90.0, Vite 6.4.6 e Vitest 4.1.12. A aplicação separa regras determinísticas e recursos do navegador. A cena Phaser apresenta movimento e recebe entrada; o domínio decide se uma classificação é correta. A interface coordena telas e transforma resultados em progresso salvo. Essa separação permite testar pontuação, precisão e persistência sem renderizar o jogo.
 
 ## Dados e configuração
 
@@ -18,7 +18,7 @@ A aplicação separa regras determinísticas e recursos do navegador. A cena Pha
 - `canResolve(uid)` impede índices inválidos, eventos repetidos e ações após o fim ou durante a pausa.
 - `checkEnd()` decide se o lote ou o relógio encerraram a tentativa.
 - `finish(reason)` registra como perdas todas as ocorrências restantes e gera exatamente um resultado.
-- `buildDeck(catalog, level, history, review)` monta o lote com distribuição previsível por categoria e exemplos. Na revisão prioriza os erros acumulados do histórico.
+- `buildDeck(catalog, level, history, review)` monta o lote com distribuição previsível por categoria e exemplos. Na revisão prioriza os itens cuja decisão mais recente ainda foi errada ou perdida; frequência histórica desempata. Um acerto posterior reduz a prioridade do item para abrir espaço a outras dificuldades. Isso não representa comprovação de aprendizagem.
 
 A precisão é `correct / deck.length`, com valor zero para lote vazio. `finish` não recalcula uma segunda conclusão quando chamado novamente. O resultado inclui nível, revisão, data, motivo, aprovação, precisão, estrelas, pontos, acertos, erros, perdas, total, duração ativa, tempo médio de decisão, erros por minuto, erros por categoria e objeto, matriz de classificações e acertos em confundíveis. O tempo de decisão é medido pela integração de jogo; o domínio apenas agrega os valores recebidos.
 

@@ -56,7 +56,8 @@ Ainda precisam ser feitos pelo grupo: preencher integrantes e matrículas, revis
 
 ## Documentação
 
-- [GDD com 16 seções e rastreabilidade](docs/GDD.md)
+- [GDD em PDF com 16 seções e capturas reais](docs/GDD.pdf)
+- [GDD editável em Markdown e rastreabilidade](docs/GDD.md)
 - [Arquitetura e contratos](docs/ARQUITETURA.md)
 - [Diagnóstico do original](docs/DIAGNOSTICO_ORIGINAL.md)
 - [Créditos, licenças e uso de IA](docs/CREDITOS.md)

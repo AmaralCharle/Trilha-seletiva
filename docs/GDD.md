@@ -7,7 +7,7 @@ Trilha Seletiva — Missão Reciclagem é um serious game de triagem em uma cent
 | Dimensão e câmera | 2D, vista lateral da central de triagem |
 | Gênero | Simulação arcade educacional para um jogador |
 | Plataforma | Navegador desktop no Windows; mouse, teclado e toque |
-| Tecnologia | JavaScript ES Modules, Phaser 3, Vite e Vitest; versões exatas no package-lock.json |
+| Tecnologia | JavaScript ES Modules, Phaser 3.90.0, Vite 6.4.6 e Vitest 4.1.12 |
 | Código entregue | https://github.com/AmaralCharle/Trilha-seletiva ; projeto com fonte, assets e testes |
 | Integrantes e matrículas | Pendente de informação do grupo; máximo de cinco integrantes |
 | Vídeo de 1 a 3 minutos | Pendente de gravação e publicação pelo grupo |
@@ -144,7 +144,7 @@ Pontos comunicam consistência e não compram vantagens. Tempo organiza a duraç
 | 4 Sujo contamina | Preparação de embalagens | 20 | 5 | 130 px/s | 1,8 s | 65 s | 80% |
 | 5 Hora do rush | Combinação das habilidades | 26 | 5 | 160 px/s | 1,4 s | 55 s | 85% |
 
-Os valores principais preservam a configuração original. A cena usa canvas lógico de 1280 × 720 e aproximadamente 1100 px de percurso útil, mais longo que a janela original de 960 px. Mantidas as velocidades, isso aumenta a tolerância antes de um item sair; não é uma comparação direta de dificuldade por velocidade isolada. A cena limita a seis itens simultâneos e suspende novas chegadas enquanto está cheia. O treino usa três itens a 45 px/s; a revisão usa 55 px/s e não tem cronômetro. Essas escolhas favorecem reconhecimento e controle, mas ainda precisam de balanceamento com pessoas. O desbloqueio é sequencial: aprovação libera o nível seguinte, até o quinto. A revisão usa as dificuldades registradas e remove o limite de tempo. Seu desempenho fica separado do desbloqueio da trilha.
+Os valores principais preservam a configuração original. A cena usa canvas lógico de 1280 × 720 e aproximadamente 1100 px de percurso útil, mais longo que a janela original de 960 px. Mantidas as velocidades, isso aumenta a tolerância antes de um item sair; não é uma comparação direta de dificuldade por velocidade isolada. A cena limita a seis itens simultâneos e suspende novas chegadas enquanto está cheia. O treino usa três itens a 45 px/s; a revisão não tem cronômetro e mantém um item parado por vez, sem perdas por borda. Essas escolhas favorecem reconhecimento e controle, mas ainda precisam de balanceamento com pessoas. O desbloqueio é sequencial: aprovação libera o nível seguinte, até o quinto. A revisão usa as dificuldades registradas e remove o limite de tempo e a perda por saída da esteira. Ela apresenta um item parado por vez para permitir reflexão. A última decisão errada ou perdida tem prioridade; uma resposta correta posterior reduz a prioridade daquele item, e a frequência histórica desempata. Essa mudança redistribui a prática sem comprovar domínio fora do jogo. Seu desempenho fica separado do desbloqueio da trilha.
 
 ### Alavancas de dificuldade
 
@@ -263,7 +263,7 @@ A tabela foi conferida por inspeção dos arquivos da reconstrução. “Impleme
 | Meta, aprovação e estrelas | 6, 7 | src/systems/session.js | Session.finish | Implementado |
 | Tutorial com três itens e repetição da orientação | 7 | src/main.js | help, start, actions.hint | Implementado |
 | Mapa e desbloqueio progressivo | 7 | src/main.js; src/systems/storage.js | map; saveAttempt, loadProgress | Implementado |
-| Revisão sem cronômetro e priorização por erros históricos | 5, 7 | src/main.js; src/systems/session.js | start; buildDeck | Implementado |
+| Revisão sem cronômetro e priorização pela última decisão errada ou perdida, com frequência histórica no desempate | 5, 7 | src/main.js; src/systems/session.js | start; buildDeck | Implementado |
 | Pausa, Esc, retomada e pausa quando a página fica oculta | 6, 12 | src/main.js; src/systems/session.js; src/scenes/FactoryScene.js | pause, resume, visibilitychange; Session.tick; FactoryScene.update | Implementado |
 | Reinício e abandono sem recompensa | 6 | src/main.js; src/systems/storage.js | start, actions.restart, actions.abandon; saveAttempt | Implementado |
 | Feedback, partículas e sons opcionais | 5, 11 | src/main.js; src/scenes/FactoryScene.js | feedback, tone; FactoryScene.classify | Implementado |
@@ -278,7 +278,7 @@ A tabela foi conferida por inspeção dos arquivos da reconstrução. “Impleme
 
 ### Validação técnica
 
-Foram executados 25 testes automatizados de domínio e persistência com resultado aprovado nesta etapa. Eles cobrem regras determinísticas e casos de borda; a contagem final e eventuais testes adicionais devem acompanhar o relatório técnico da versão entregue. A instalação, o build de produção e a execução visual precisam ser registrados com resultados reais em `docs/TESTES.md`. Aprovação automatizada não equivale a teste com pessoa de fora do grupo.
+Foram executados 26 testes automatizados de domínio e persistência com resultado aprovado nesta etapa. Eles cobrem regras determinísticas e casos de borda; o resultado corresponde a três arquivos de teste executados com Vitest 4.1.12; o relatório técnico detalha os casos. Na verificação visual em navegador foram observados tutorial concluído com 100%, resultado de fase abaixo da meta com 12 itens contabilizados e classificação correta e incorreta por mouse, arraste e teclado na revisão. Também foram observados download do CSV, persistência de preferência de som após recarregar, preservação de tentativa da fase 1 e pausa, reinício e abandono da revisão. A verificação utilizou o navegador integrado baseado em Chromium; Chrome e Edge nativos não foram testados. A jornada de cinco fases foi validada no domínio automatizado, sem uma passagem manual completa pelas cinco fases no navegador. O build de produção foi servido localmente na porta 4173, e o menu com a arte carregou sem falha observada. Instalação e produção são registradas em `docs/TESTES.md`. Aprovação automatizada não equivale a teste com pessoa de fora do grupo.
 
 ### Teste com pessoa externa
 
@@ -378,7 +378,27 @@ const precision = this.deck.length ? this.correct / this.deck.length : 0;
 
 ## Anexo B Capturas reais
 
-As capturas da versão executada devem mostrar tela inicial, fase em andamento, acerto, erro e resultado. Não utilizar mockups como evidência de execução. A pasta de evidências e as legendas são completadas após a verificação visual.
+As imagens seguintes foram capturadas da versão executada no navegador durante a verificação técnica. Elas documentam os estados observados; não representam um teste externo de aprendizagem.
+
+![Tela inicial com central de triagem e entrada para a missão](capturas/menu.jpg)
+
+Figura B1. Menu inicial com identidade visual, acesso à missão, instruções e configurações.
+
+![Mapa de progresso e fases](capturas/trilha.jpg)
+
+Figura B2. Trilha com cinco etapas, estrelas e bloqueio progressivo.
+
+![Feedback de classificação correta](capturas/jogo-acerto.jpg)
+
+Figura B3. Cena de jogo com resíduo, lixeiras identificadas e retorno de acerto.
+
+![Feedback de item perdido na esteira](capturas/erro.jpg)
+
+Figura B4. Eco informa a perda de um item que saiu da esteira e orienta a próxima decisão.
+
+![Resultado de tentativa](capturas/resultado.jpg)
+
+Figura B5. Resultado com precisão, contabilização do lote e opções de continuidade.
 
 ## Pendências para a entrega acadêmica
 
