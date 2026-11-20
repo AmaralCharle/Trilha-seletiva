@@ -94,10 +94,10 @@ O estado de navegação é controlado por `screen` em `src/main.js`; não há ro
 
 1. **Menu:** campanha, Desafio Infinito, revisão, ajuda, mapa, resultados, ranking, créditos e configurações. “Jogar campanha” abre ajuda/tutorial no primeiro acesso e o mapa se já há histórico.
 2. **Ajuda:** explica lixeiras e controles; oferece as opções de iniciar o tutorial (“Treinar com o Eco”), abrir o mapa (“Ver minha trilha”) ou retornar à tela inicial (“Voltar”).
-3. **Tutorial:** treinamento guiado de três itens; não grava tentativa de campanha nem altera estrelas.
-4. **Mapa:** cinco fases, estrelas e bloqueio sequencial; inclui revisão, estatísticas e reset seletivo. O botão “Voltar” retorna à tela de origem: `help` quando acessado por “Ver minha trilha” nas instruções e `menu` nos demais acessos.
+3. **Tutorial:** treinamento guiado de três itens; não grava tentativa de campanha nem altera estrelas. Se abandonado pela pausa, abre o mapa e preserva a origem `help` quando a jornada começou por “Jogar campanha”.
+4. **Mapa:** cinco fases, estrelas e bloqueio sequencial; inclui revisão, estatísticas e reset seletivo. O botão “Voltar” retorna à tela de origem: `help` quando acessado por “Ver minha trilha” nas instruções ou após abandonar pela pausa um treino/tutorial iniciado por “Jogar campanha”; `menu` nos demais acessos.
 5. **Partida de campanha:** fase escolhida, revisão ou tutorial, HUD, meta, Eco, feedback e controles.
-6. **Pausa:** congela sessão, cena, tween e áudio; permite continuar, reiniciar fase/desafio, abandonar, alternar áudio e, se disponível, fullscreen.
+6. **Pausa:** congela sessão, cena, tween e áudio; permite continuar, reiniciar fase/desafio, abandonar, alternar áudio e, se disponível, fullscreen. Abandonar o treino/tutorial abre o mapa (`map`); se a jornada começou por “Jogar campanha”, a origem `help` é preservada para o botão “Voltar” do mapa.
 7. **Resultado da campanha:** aprovação, precisão, acertos, pontos, perdas, erros por categoria, dica educacional quando falha; repetir, próxima fase, mapa, menu ou conclusão.
 8. **Conclusão da jornada:** resumo de estatísticas com medalha.
 9. **Estatísticas:** tentativas, primeira/última precisão, estrelas, dificuldades mais erradas, comparação por fase/revisão, últimas tentativas e exportação CSV.
