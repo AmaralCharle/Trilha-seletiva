@@ -1,4 +1,6 @@
 import { RULES } from '../config/rules.js';
+import { classifyWaste } from './classification.js';
+import { sessionRandom, fisherYates, constrainCategoryOrder } from './sequence.js';
 export { RULES };
 
 const threshold = value => value > 1 ? value / 100 : value;
@@ -30,8 +32,7 @@ export class Session {
   resolve(uid, _item, choice, decisionSeconds = 0, prepared = false) {
     if (!this.canResolve(uid)) return { ok: false, reason: 'ignored', points: 0 };
     const item = this.deck[uid];
-    const ok = choice === item.category && (!item.needsPrep || prepared);
-    const reason = ok ? 'correct' : choice !== item.category ? 'category' : 'preparation';
+    const { ok, reason } = classifyWaste(item, choice, prepared);
     let points = 0;
     if (ok) {
       this.correct++;
@@ -104,40 +105,59 @@ export class Session {
   }
 }
 
-/** Balanced, repeatable ordering, with category rounds and rotating examples. */
-export function buildDeck(catalog, level, history = [], review = false) {
+/** Balanced samples followed by constrained Fisher–Yates; no category round-robin. */
+export function buildDeck(catalog, level, history = [], review = false, options = {}) {
   const list = Array.isArray(catalog) ? catalog : Object.values(catalog);
   const categories = level.categories || [...new Set(list.map(item => item.category))];
   const eligible = list.filter(item => categories.includes(item.category) && (review || level.id >= 3 || !item.tricky));
   if (!eligible.length) return [];
-  const errors = {};
-  const lastDecision = {};
-  for (const attempt of history) {
-    for (const [id, n] of Object.entries(attempt.errorsByItem || {})) {
-      errors[id] = (errors[id] || 0) + n;
-      if (!Array.isArray(attempt.decisions)) lastDecision[id] = false;
+  const rng = sessionRandom(options);
+  const count = review ? Math.min(12, Math.max(6, eligible.length)) : Math.max(0, Math.floor(level.count || 0));
+  let sampled;
+  if (review) {
+    const errors = {}, lastDecision = {};
+    for (const attempt of history) {
+      for (const [id, n] of Object.entries(attempt.errorsByItem || {})) {
+        errors[id] = (errors[id] || 0) + n;
+        if (!Array.isArray(attempt.decisions)) lastDecision[id] = false;
+      }
+      for (const decision of attempt.decisions || []) lastDecision[decision.id] = !!decision.ok;
     }
-    for (const decision of attempt.decisions || []) lastDecision[decision.id] = !!decision.ok;
+    const pending = id => lastDecision[id] === false ? 1 : 0;
+    const ordered = fisherYates(eligible, rng).sort((a, b) => pending(b.id) - pending(a.id) || (errors[b.id] || 0) - (errors[a.id] || 0));
+    sampled = Array.from({ length: count }, (_, i) => ({ ...ordered[i % ordered.length], needsPrep: !!ordered[i % ordered.length].needsPrep }));
+    // Priority takes precedence over shuffle, while alternatives break long same-type runs.
+    sampled = constrainCategoryOrder(sampled, rng, [], { shuffle: false });
+  } else {
+    const normal = eligible.filter(item => !item.tricky);
+    const tricky = eligible.filter(item => item.tricky);
+    const fraction = level.id >= 3 ? Math.max(0, Math.min(1, level.trickyFraction ?? 0.3)) : 0;
+    const trickyCount = tricky.length ? normal.length ? Math.floor(count * fraction) : count : 0;
+    sampled = [...balancedSample(normal.length ? normal : eligible, count - trickyCount, rng), ...balancedSample(tricky, trickyCount, rng)]
+      .map(item => ({ ...item, needsPrep: !!item.needsPrep && level.id >= 4 }));
+    if (level.id >= 4 && level.prepFraction != null) {
+      const capable = fisherYates(sampled.filter(item => item.needsPrep), rng);
+      const desired = Math.min(capable.length, Math.round(count * level.prepFraction));
+      capable.forEach((item, index) => { item.needsPrep = index < desired; });
+    }
+    sampled = constrainCategoryOrder(sampled, rng);
   }
-  const pending = id => lastDecision[id] === false ? 1 : 0;
-  const count = review ? Math.min(12, Math.max(6, eligible.length)) : level.count;
-  const ordered = review
-    ? [...eligible].sort((a, b) => pending(b.id) - pending(a.id) || (errors[b.id] || 0) - (errors[a.id] || 0) || a.id.localeCompare(b.id))
-    : categories.flatMap((category, index) => eligible.filter(item => item.category === category).map((item, n) => ({ item, order: n * categories.length + index }))).sort((a, b) => a.order - b.order).map(entry => entry.item);
-  const normal = ordered.filter(item => !item.tricky);
-  const tricky = ordered.filter(item => item.tricky);
-  const fraction = level.id >= 3 ? (level.trickyFraction ?? 0.3) : 0;
-  let normalIndex = 0, trickyIndex = 0;
-  const deck = [];
+  return sampled.map((item, uid) => ({ ...item, uid }));
+}
+
+function balancedSample(pool, count, rng) {
+  if (!pool.length || count <= 0) return [];
+  const categories = [...new Set(pool.map(item => item.category))];
+  const bags = new Map(categories.map(category => [category, []]));
+  const draws = Object.fromEntries(categories.map(category => [category, 0]));
+  const sampled = [];
   for (let i = 0; i < count; i++) {
-    const trickySlot = Math.floor((i + 1) * fraction) > Math.floor(i * fraction);
-    const item = review ? ordered[i % ordered.length] : trickySlot && tricky.length ? tricky[trickyIndex++ % tricky.length] : normal.length ? normal[normalIndex++ % normal.length] : ordered[i % ordered.length];
-    deck.push({ ...item, uid: i, needsPrep: !!item.needsPrep && (review || level.id >= 4) });
+    const minimum = Math.min(...Object.values(draws));
+    const choices = categories.filter(category => draws[category] === minimum);
+    const category = choices[Math.floor(rng() * choices.length)];
+    if (!bags.get(category).length) bags.set(category, fisherYates(pool.filter(item => item.category === category), rng));
+    sampled.push(bags.get(category).pop());
+    draws[category]++;
   }
-  if (!review && level.id >= 4 && level.prepFraction != null) {
-    const capable = deck.filter(item => item.needsPrep);
-    const desired = Math.min(capable.length, Math.round(count * level.prepFraction));
-    capable.forEach((item, index) => { item.needsPrep = index < desired; });
-  }
-  return deck;
+  return sampled;
 }

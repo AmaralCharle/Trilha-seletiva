@@ -63,7 +63,7 @@ export function ecoPoseSVG(state='idle'){
  const happy=state==='happy',guide=state==='guide',error=state==='error';
  const left=happy?'M43 77Q24 71 19 56':guide?'M44 79Q23 80 16 68':error?'M43 79Q24 83 24 95':'M43 79Q27 83 24 74';
  const right=happy?'M86 77Q104 70 110 53':guide?'M85 78Q102 64 110 68':error?'M85 78Q103 84 101 95':'M85 79Q103 80 105 71';
- const eyes=happy?line('M42 50q7-12 13 0m18 0q7-12 13 0','#e5ffe6',3.5):error?line('M43 49l10 3m20 0 10-3','#e5ffe6',3.5):ellipse(48,50,4.3,7,'#e4ffe9','stroke="none"')+ellipse(79,50,4.3,7,'#e4ffe9','stroke="none"');
+ const eyes=state==='blink'?line('M43 51h11m19 0h11','#e5ffe6',3.5):happy?line('M42 50q7-12 13 0m18 0q7-12 13 0','#e5ffe6',3.5):error?line('M43 49l10 3m20 0 10-3','#e5ffe6',3.5):ellipse(48,50,4.3,7,'#e4ffe9','stroke="none"')+ellipse(79,50,4.3,7,'#e4ffe9','stroke="none"');
  const mouth=happy?shape('M56 60q9 14 18 0z','#c8ffe0','stroke="none"'):error?line('M58 64q7-5 14 0','#d9ffe8',2.2):line('M57 61q8 7 15-1','#d9ffe8',2.2);
  return wrap(`<g>${line(left,'#256d64',10)}${line(right,'#256d64',10)}${line(left,'#69bba1',6)}${line(right,'#69bba1',6)}
  ${shape(happy?'M51 101l-5 12h-17q-4-4 2-8l13-4z':'M50 101l-3 14H32q-5-5 3-9l8-6z','url(#white)')}${shape(happy?'M75 101l9 8 12-4q7 3 4 8l-20 5-12-14z':'M76 101l4 14h16q5-5-3-9l-10-6z','url(#white)')}

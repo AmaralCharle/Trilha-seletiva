@@ -1,0 +1,112 @@
+{
+  "sampleRate": 22050,
+  "channels": 1,
+  "bits": 16,
+  "tracks": [
+    {
+      "name": "phase1",
+      "duration": 20.87,
+      "bytes": 920392
+    },
+    {
+      "name": "phase2",
+      "duration": 17.778,
+      "bytes": 784044
+    },
+    {
+      "name": "phase3",
+      "duration": 16.552,
+      "bytes": 729976
+    },
+    {
+      "name": "phase4",
+      "duration": 23.226,
+      "bytes": 1024302
+    },
+    {
+      "name": "phase5",
+      "duration": 20,
+      "bytes": 882044
+    },
+    {
+      "name": "review",
+      "duration": 25.946,
+      "bytes": 1144260
+    },
+    {
+      "name": "infinite",
+      "duration": 21.176,
+      "bytes": 933926
+    },
+    {
+      "name": "gameover",
+      "duration": 6.4,
+      "bytes": 282284
+    },
+    {
+      "name": "victory",
+      "duration": 5.2,
+      "bytes": 229364
+    },
+    {
+      "name": "fx-select",
+      "duration": 0.11,
+      "bytes": 4894
+    },
+    {
+      "name": "fx-drag",
+      "duration": 0.16,
+      "bytes": 7100
+    },
+    {
+      "name": "fx-correct",
+      "duration": 0.3,
+      "bytes": 13274
+    },
+    {
+      "name": "fx-wrong",
+      "duration": 0.28,
+      "bytes": 12392
+    },
+    {
+      "name": "fx-bin",
+      "duration": 0.14,
+      "bytes": 6218
+    },
+    {
+      "name": "fx-combo3",
+      "duration": 0.4,
+      "bytes": 17684
+    },
+    {
+      "name": "fx-combo5",
+      "duration": 0.58,
+      "bytes": 25622
+    },
+    {
+      "name": "fx-unlock",
+      "duration": 0.75,
+      "bytes": 33118
+    },
+    {
+      "name": "fx-victory",
+      "duration": 1.18,
+      "bytes": 52082
+    },
+    {
+      "name": "fx-defeat",
+      "duration": 0.9,
+      "bytes": 39734
+    },
+    {
+      "name": "fx-record",
+      "duration": 1.2,
+      "bytes": 52964
+    },
+    {
+      "name": "fx-wave",
+      "duration": 0.6,
+      "bytes": 26504
+    }
+  ]
+}

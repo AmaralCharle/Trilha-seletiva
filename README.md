@@ -1,21 +1,17 @@
 # Trilha Seletiva
 
-Jogo educacional 2D de triagem de resíduos no navegador. Você ajuda Eco a operar uma central de reciclagem, aprende a reconhecer materiais e avança por cinco fases. Os 27 exemplos e os parâmetros principais preservam a base do projeto Python fornecido; as regras, a apresentação e o armazenamento foram reconstruídos para navegador.
+Versão 3.1.0. Jogo educacional 2D no navegador com cinco fases de campanha, tutorial, revisão personalizada e Desafio Infinito. A identidade cartoon industrial da versão 2 foi preservada. A campanha pratica a separação dos materiais; o arcade oferece ondas e recordes locais sem alterar a progressão acadêmica.
 
-## Iniciar
+## Executar
 
-1. Instale Node.js 20.19 ou superior, ou 22.12 ou superior. A instalação inicial das dependências requer internet.
-2. Extraia o projeto e abra um terminal na pasta que contém este README e `package.json`.
-3. Execute:
+Instale Node.js 20.19 ou superior, ou 22.12 ou superior. Abra um terminal na pasta deste README e execute:
 
 ```powershell
 npm install
 npm run dev
 ```
 
-Abra o endereço local que o Vite mostrar. Chrome e Edge no Windows são os navegadores-alvo. Mantenha o terminal aberto enquanto estiver jogando. A execução precisa de servidor HTTP; não abra `index.html` diretamente por duplo clique.
-
-## Produção e testes
+Abra o endereço HTTP exibido pelo Vite, mantendo o terminal aberto. Não abra index.html por duplo clique. Chrome e Edge desktop são alvos; a validação desta rodada utilizou o navegador integrado baseado em Chromium.
 
 ```powershell
 npm test
@@ -23,51 +19,55 @@ npm run build
 npm run preview
 ```
 
-`npm test` executa os testes determinísticos de domínio e persistência. `npm run build` gera a pasta `dist`, com Phaser e recursos empacotados. `npm run preview` serve essa distribuição localmente. O jogo não usa CDN, autenticação ou backend para sua mecânica. O relatório de verificações efetivamente executadas está em [docs/TESTES.md](docs/TESTES.md).
-
-## Atualização visual 2
-
-Versão do jogo: 2.0.0. Verificação desta rodada: 29 testes aprovados em quatro arquivos, build de produção concluído, tutorial e fase 1 completados no navegador integrado. A fase 1 terminou com 12/12, 100%, 220 pontos e três estrelas. O relatório separa essa verificação das evidências da primeira versão.
-
-A central agora usa uma oficina cartoon clara, bairro pela janela, piso de madeira, máquinas animadas, resíduos vetoriais individuais e Eco com quatro poses. As lixeiras têm símbolos e tampas animadas; a interface conserva os controles, regras e progresso. Fonte DejaVu Sans e aviso de licença estão em `public/assets`. As referências visuais fornecidas serviram apenas como direção criativa e não fazem parte dos assets. A verificação específica está em [docs/VISUAL_2.md](docs/VISUAL_2.md).
+O build gera dist com todos os recursos locais; a instalação inicial precisa de internet, mas o jogo não depende de CDN, APIs, autenticação própria ou backend para operar. A hospedagem privada pode exigir login da plataforma; isso é independente do código do jogo.
 
 ## Jogar
 
-Comece pelo tutorial de Eco. Selecione um objeto na esteira, prepare a embalagem quando houver restos e encaminhe-a à lixeira correta. Você pode arrastar e soltar; a interface também apresenta os atalhos de teclado. Cada lixeira tem nome e símbolo além da cor. A primeira fase não tem cronômetro. A partir da segunda, erro ou perda desconta três segundos; cinco acertos seguidos devolvem dois segundos. O terceiro acerto consecutivo já vale o dobro.
+Mouse ou toque: selecione o objeto e a lixeira, ou arraste e solte. Teclado: 1–5 escolhem o destino, Tab muda o item, E retira restos e Esc pausa. As categorias são papel, plástico, vidro, metal e rejeito, identificadas por nome e símbolo além da cor. Retirar restos não significa lavar toda embalagem; consulte as regras da coleta do município.
 
-Ao terminar, a precisão considera todo o lote da tentativa, incluindo perdas e objetos pendentes. A meta aprovada libera a fase seguinte. Repita para melhorar estrelas ou use a revisão sem cronômetro para praticar as dificuldades. Dados ficam no `localStorage` deste navegador; exporte CSV se precisar guardar o histórico fora dele. Apagar os dados do site ou usar outro navegador não transfere seu progresso.
+Campanha: cinco fases e parâmetros originais. Acerto vale 10 pontos, ou 20 a partir do terceiro consecutivo; erro e perda descontam 3 segundos onde há relógio; cinco acertos devolvem 2 segundos. A precisão usa todo o lote, incluindo perdas e pendentes. As metas continuam 75%,80%,80%,80%,85%. A revisão apresenta um item parado por vez, sem cronômetro, priorizando dificuldades ainda não corrigidas. O tutorial permanece acompanhado e previsível para ensinar o controle; as partidas normais são embaralhadas.
+
+## Desafio Infinito
+
+Disponível desde o primeiro acesso. Escolha um apelido de até 15 caracteres, ou use Jogador. Comece com três vidas e todas as categorias. Erro de classificação, preparação incorreta ou item perdido retira uma vida e interrompe a sequência. Acertos valem 10 pontos, 20 a partir do terceiro seguido e30 a partir do décimo. Acertos não recuperam vidas.
+
+Cada dez itens resolvidos inicia uma onda. A esteira começa em 85 px/s e intervalo2,5 s, cresce pela tabela em src/config/infinite.js e limita a velocidade a240 px/s e o intervalo a1,1 s. Há no máximo seis itens simultâneos e espaçamento mínimo 150 px. Ondas avançadas incluem mais confundíveis e preparação de embalagens. A geração mantém memória limitada, sem um lote infinito armazenado em RAM.
+
+Ao perder a última vida, a partida para. A fábrica escurece, suas pequenas luzes reagem, Eco demonstra surpresa e aparece GAME OVER. A introdução dura 1,75 s e pode ser pulada. O resultado permanece aberto até Tentar novamente, Ver ranking ou Menu principal. A campanha usa a mesma identidade para TEMPO ESGOTADO ou DESAFIO NÃO CONCLUÍDO, sem receber um sistema de vidas.
+
+O ranking guarda as dez melhores tentativas apenas neste navegador e endereço, com apelido, pontos, onda, combo, acertos, precisão e data. Limpar recordes exige confirmação e não apaga a campanha. Abandonar uma partida em andamento não insere um recorde. Dados podem ser apagados pelo navegador; não há ranking online.
+
+## Áudio original local
+
+Sete músicas instrumentais distintas: fases 1–5, revisão e arcade. Mais duas vinhetas sem repetição, Game Over de 6,4 s e vitória de 5,2 s, e doze efeitos. As configurações oferecem volumes independentes de música e efeitos, além de silêncio geral, preservados entre acessos. O som só começa após uma interação.
+
+AudioManager utiliza o áudio do Phaser. Na troca de trilha, o fade-out termina e a voz anterior é destruída antes de iniciar a próxima; nunca há duas músicas simultâneas. Pausa preserva a posição, e reiniciar retoma a música do modo. No menu não há música de fundo. Se um arquivo falhar, o retorno visual continua disponível. O arquivo de Game Over existe e é reproduzido uma vez, sem loop.
+
+```powershell
+npm run audio:generate
+```
+
+Esse comando recria os WAVs e o manifesto com Node.js e bibliotecas padrão, sem baixar amostras. Créditos, síntese e limites estão em docs/AUDIO_3.md.
 
 ## Organização
 
 ```text
-src/
-  config/     parâmetros dos níveis e regras centrais
-  data/       catálogo de 27 resíduos e conteúdo educacional
-  scenes/     central de triagem e descarte no Phaser
-  entities/   ambiente em camadas e animações da oficina
-  systems/    sessão determinística e persistência local
-  ui/         resíduos, Eco, lixeiras e cenário em SVG
-  main.js     navegação, telas e integração
-public/assets/ fonte DejaVu Sans e aviso de licença
-tests/        testes automatizados
-docs/         GDD, arquitetura, auditoria, créditos e verificações
+src/config/   fases, pontuação e dificuldade do arcade
+src/data/     catálogo e manifesto dos áudios
+src/systems/  campanha, arcade, gerador, classificação comum, áudio e armazenamento
+src/entities/ ambiente e animações reutilizados
+src/scenes/   apresentação da fábrica, entradas e simulação
+src/ui/       arte SVG, marcação arcade e cenário
+public/assets/ fontes e WAVs locais com créditos
+tests/        regras, geração, ranking, assets, áudio e transições
+tools/        geração reprodutível de áudio
+docs/         GDD, arquitetura, créditos e evidências
 ```
 
-Tecnologias fixadas: Phaser 3.90.0, Vite 6.4.6 e Vitest 4.1.12; versões transitivas exatas em `package-lock.json`.
+Tecnologias: Phaser3.90.0, Vite6.4.6, Vitest4.1.12 e JavaScript ES Modules. Repositório: https://github.com/AmaralCharle/Trilha-seletiva .
 
-## Conteúdo e limites
+## Verificação e entrega acadêmica
 
-A central de triagem é fictícia. Regras locais de aceitação variam: consulte seu município ou cooperativa, sobretudo para vidros especiais e materiais compostos. Preparar uma embalagem significa retirar restos, sem exigir lavagem de tudo. Vidro quebrado precisa ser acondicionado e identificado com segurança. O jogo não orienta descarte de pilhas, lâmpadas, medicamentos ou resíduos de saúde.
+Os testes e limites reais estão em docs/TESTES.md. Foram aprovados 62 testes em 8 arquivos nesta rodada; não equivalem a validação de aprendizagem com pessoas. O relato técnico da versão 3.1 está em docs/VERSAO_3_1.md. O GDD editável está em docs/GDD.md e a versão de leitura em docs/GDD.pdf.
 
-Ainda precisam ser feitos pelo grupo: preencher integrantes e matrículas, revisar o GDD, observar pelo menos uma pessoa externa jogando e produzir o vídeo acadêmico de 1 a 3 minutos. Não há comprovação de melhoria de aprendizagem. Acesso integral por leitor de tela no canvas e desempenho em todas as máquinas de laboratório não foram validados.
-
-## Documentação
-
-- [GDD em PDF com 16 seções e capturas reais](docs/GDD.pdf)
-- [GDD editável em Markdown e rastreabilidade](docs/GDD.md)
-- [Arquitetura e contratos](docs/ARQUITETURA.md)
-- [Diagnóstico do original](docs/DIAGNOSTICO_ORIGINAL.md)
-- [Créditos, licenças e uso de IA](docs/CREDITOS.md)
-- [Testes e pendências](docs/TESTES.md)
-
-A reconstrução foi desenvolvida com assistência do Codex da OpenAI. O grupo deve revisar o código e saber explicar o projeto antes da entrega; a declaração detalhada está nos créditos e na seção 16 do GDD.
+Continuam pendentes integrantes/matrículas, teste com pessoa externa e vídeo acadêmico público de 1–3min. Não foi feita medição sustentada de FPS, validação de toque em aparelho físico ou certificação de acessibilidade. A campanha e o arcade continuam sujeitos a balanceamento com jogadores reais.

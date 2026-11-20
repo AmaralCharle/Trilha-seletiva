@@ -3,6 +3,7 @@ import {CATALOG} from '../data/catalog.js';
 import {itemSVG,ecoPoseSVG,binBodySVG,binLidSVG,svgURL} from '../ui/art.js';
 import {factorySVG,citySVG,gearSVG} from '../ui/factoryArt.js';
 import {FactoryEnvironment} from '../entities/FactoryEnvironment.js';
+import {AudioManager,preloadAudio} from '../systems/AudioManager.js';
 
 const BIN_NAMES={paper:'PAPEL',plastic:'PLÁSTICO',glass:'VIDRO',metal:'METAL',reject:'REJEITO'};
 const COLORS={paper:0x428ac9,plastic:0xd96557,glass:0x4e9d73,metal:0xd6a73f,reject:0x84918b};
@@ -11,8 +12,9 @@ export class FactoryScene extends Phaser.Scene {
   constructor(){super('Factory');this.activeItems=[];this.mode='menu';this.transients=new Set();}
 
   preload(){
+    preloadAudio(this);
     for(const item of CATALOG)this.load.svg(item.id,svgURL(itemSVG(item.id)));
-    for(const state of ['idle','happy','guide','error'])this.load.svg(`eco-${state}`,svgURL(ecoPoseSVG(state)));
+    for(const state of ['idle','happy','guide','error','blink'])this.load.svg(`eco-${state}`,svgURL(ecoPoseSVG(state)));
     for(const category of Object.keys(BIN_NAMES)){
       this.load.svg(`bin-${category}`,svgURL(binBodySVG(category)));
       this.load.svg(`lid-${category}`,svgURL(binLidSVG(category)));
@@ -20,14 +22,15 @@ export class FactoryScene extends Phaser.Scene {
     this.load.svg('factory',svgURL(factorySVG));
     this.load.svg('city',svgURL(citySVG));
     this.load.svg('gear',svgURL(gearSVG));
-    this.load.on('loaderror',()=>window.dispatchEvent(new CustomEvent('asset-error')));
+    this.load.on('loaderror',file=>window.dispatchEvent(file.type==='audio'?new CustomEvent('audio-error',{detail:'Um áudio não carregou. O jogo continuará com retorno visual.'}):new Event('asset-error')));
   }
 
   create(){
+    this.audio=new AudioManager(this,{onError:message=>window.dispatchEvent(new CustomEvent('audio-error',{detail:message}))});
     this.drawFactory();
     this.input.on('dragstart',(p,obj)=>{
       if(this.mode!=='play'||this.session?.paused)return;
-      this.selected=obj;obj.dragging=true;obj.setScale(1.06);obj.setDepth(12);
+      this.selected=obj;obj.dragging=true;obj.setScale(1.06);this.audio.playEffect('drag');obj.setDepth(12);
     });
     this.input.on('drag',(p,obj,x,y)=>{
       if(this.mode==='play'&&!this.session.paused){obj.x=x;obj.y=y;}
@@ -59,12 +62,12 @@ export class FactoryScene extends Phaser.Scene {
   }
 
   showMenu(){
-    this.tweens.resumeAll();this.mode='menu';this.clearItems();this.clearEffects();
+    this.clearShutdown();this.tweens.resumeAll();this.mode='menu';this.clearItems();this.clearEffects();
     this.binLayer.removeAll(true);this.environment.showHero(true);this.marker.clear();
   }
 
   start(session,onUpdate,onFinish,onFeedback){
-    this.tweens.resumeAll();this.clearItems();this.clearEffects();this.mode='play';
+    this.clearShutdown();this.tweens.resumeAll();this.clearItems();this.clearEffects();this.mode='play';
     this.environment.showHero(false);this.session=session;
     this.onUpdate=onUpdate;this.onFinish=onFinish;this.onFeedback=onFeedback;
     this.spawned=0;this.spawnClock=0;this.selected=null;
@@ -89,6 +92,24 @@ export class FactoryScene extends Phaser.Scene {
     this.binZones.push({category,rect:new Phaser.Geom.Rectangle(x-84,y-22,168,150),x,y,body,lid,hover});
   }
 
+  presentDefeat(onReady){
+    this.mode='defeat';this.clearItems();this.marker.clear();
+    const shade=this.transient(this.add.rectangle(640,360,1280,720,0x123b36,1).setAlpha(0).setDepth(14));
+    if(this.environment.reduced)shade.setAlpha(.24);
+    else{
+      this.tweens.add({targets:shade,alpha:.32,duration:650,ease:'Sine.out'});
+      for(const lamp of this.environment.lamps)this.tweens.add({targets:lamp,alpha:.22,duration:210,yoyo:true,repeat:1});
+    }
+    const timer=this.time.delayedCall(1750,onReady);
+    this.shutdownTimer=timer;
+    return ()=>{timer.remove(false);if(this.shutdownTimer===timer)this.shutdownTimer=null;};
+  }
+
+  clearShutdown(){
+    this.shutdownTimer?.remove(false);this.shutdownTimer=null;
+    for(const lamp of this.environment?.lamps??[]){this.tweens.killTweensOf(lamp);lamp.alpha=1;}
+  }
+
   clearItems(){
     this.activeItems.forEach(x=>{this.tweens.killTweensOf(x);x.destroy();});this.activeItems=[];
   }
@@ -101,8 +122,9 @@ export class FactoryScene extends Phaser.Scene {
   destroyEffect(obj){this.transients.delete(obj);obj.destroy();}
 
   spawn(){
-    if(this.spawned>=this.session.deck.length)return;
-    const uid=this.spawned++,item=this.session.deck[uid];
+    let uid,item;
+    if(this.session.infinite){item=this.session.nextItem();if(!item)return;uid=item.uid;}
+    else{if(this.spawned>=this.session.deck.length)return;uid=this.spawned++;item=this.session.deck[uid];}
     const o=this.add.container(92,350);
     const plate=this.add.graphics();
     plate.fillStyle(0x315440,.14).fillRoundedRect(-63,-48,128,119,18);
@@ -110,14 +132,14 @@ export class FactoryScene extends Phaser.Scene {
     plate.lineStyle(2,0x709a80,.75).strokeRoundedRect(-63,-56,126,118,16);
     plate.lineStyle(2,0xffffff,.8).lineBetween(-46,-49,43,-49);
     o.add(plate);
-    o.add(this.add.ellipse(0,19,68,12,0x54755a,.14));
-    o.add(this.add.image(0,-14,item.id).setDisplaySize(87,87));
+    o.shadow=this.add.ellipse(0,19,68,12,0x54755a,.14);o.add(o.shadow);
+    o.sprite=this.add.image(0,-14,item.id).setDisplaySize(87,87);o.add(o.sprite);
     o.add(this.add.text(0,44,item.name,{fontFamily:'Arial',fontStyle:'bold',fontSize:'14px',color:'#284e47',align:'center',wordWrap:{width:116}}).setOrigin(.5));
     if(item.needsPrep){
       o.badge=this.add.text(0,-68,'RESTOS',{fontFamily:'Arial',fontStyle:'bold',fontSize:'12px',backgroundColor:'#f3cb68',color:'#27483c',padding:{x:9,y:4}}).setOrigin(.5);o.add(o.badge);
     }
     o.setDepth(5);o.setSize(126,118).setInteractive({useHandCursor:true});this.input.setDraggable(o);
-    o.on('pointerdown',()=>this.selected=o);
+    o.on('pointerdown',()=>{this.selected=o;this.audio.playEffect('select');});
     o.uid=uid;o.item=item;o.born=this.session.elapsed;o.beltX=92;
     this.activeItems.push(o);if(!this.selected)this.selected=o;
   }
@@ -129,6 +151,7 @@ export class FactoryScene extends Phaser.Scene {
   }
 
   animateBin(bin,ok){
+    this.audio.playEffect('bin');
     if(this.environment.reduced)return;
     this.tweens.killTweensOf(bin.lid);bin.lid.setPosition(bin.x,bin.y-5).setAngle(0);
     this.tweens.add({targets:bin.lid,y:bin.y-22,angle:-5,duration:110,yoyo:true,hold:85,ease:'Sine.out'});
@@ -152,6 +175,9 @@ export class FactoryScene extends Phaser.Scene {
     const r=this.session.resolve(obj.uid,obj.item,category,this.session.elapsed-obj.born,!!obj.prepared);
     if(r.reason==='ignored')return;
     const text=r.ok?`Boa! +${r.points} pontos${this.session.streak>=3?' · sequência 2×':''}`:(obj.item.needsPrep&&!obj.prepared?'Retire os restos com E antes de separar. ':'')+obj.item.tip;
+    this.audio.playEffect(r.ok?'correct':'wrong');
+    if(r.ok&&this.session.streak===3)this.audio.playEffect('combo3');
+    if(r.ok&&this.session.streak%5===0)this.audio.playEffect('combo5');
     this.onFeedback(r.ok,text);
     const bin=this.binZones.find(b=>b.category===category);
     this.animateBin(bin,r.ok);this.feedbackParticles(bin,r.ok);
@@ -172,20 +198,26 @@ export class FactoryScene extends Phaser.Scene {
 
   update(t,ms){
     const dt=Math.min(ms/1000,.05);
-    this.environment?.update(dt,this.mode==='play'&&this.session?.paused);
+    this.environment?.update(dt,(this.mode==='play'&&this.session?.paused)||(this.mode==='result'&&this.session?.infinite)||this.mode==='defeat');
     if(this.mode!=='play'||!this.session||this.session.paused)return;
     this.session.tick(dt);if(this.session.finished){this.checkEnd();return;}
     this.spawnClock+=dt;
-    if(this.spawnClock>=this.session.level.interval&&this.activeItems.length<(this.session.review?1:6)){
+    const maxActive=this.session.infinite?this.session.difficulty.maxActive:(this.session.review?1:6);
+    const room=!this.session.infinite||this.activeItems.every(o=>o.beltX-92>=this.session.difficulty.minSpacing);
+    if(this.spawnClock>=this.session.level.interval&&this.activeItems.length<maxActive&&room){
       this.spawnClock=0;this.spawn();
     }
     for(const o of [...this.activeItems]){
       o.beltX+=this.session.review?0:this.session.level.speed*dt;
-      if(!o.dragging){o.x=o.beltX;o.y=350;}
+      if(!o.dragging){o.x=o.beltX;o.y=350;
+        if(!this.environment.reduced&&!this.session.review){o.sprite.y=-14+Math.sin(this.environment.clock*4+o.uid)*1.4;o.sprite.angle=Math.sin(this.environment.clock*2+o.uid)*.8;}
+      }
+      o.shadow.setScale(o.dragging?.82:1);o.shadow.alpha=o.dragging?.25:.14;
       if(o.beltX>1195){
         this.session.miss(o.uid,o.item);this.activeItems=this.activeItems.filter(x=>x!==o);
         if(this.selected===o)this.selected=this.activeItems[0];o.destroy();
-        this.onFeedback(false,'Item perdido. Escolha o próximo com calma.');
+        this.audio.playEffect('wrong');this.onFeedback(false,'Item perdido. Escolha o próximo com calma.');
+        if(this.session.finished){this.checkEnd();return;}
       }
     }
     this.marker.clear();

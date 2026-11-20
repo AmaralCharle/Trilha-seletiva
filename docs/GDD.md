@@ -7,7 +7,7 @@ Trilha Seletiva — Missão Reciclagem é um serious game de triagem em uma cent
 | Dimensão e câmera | 2D, vista lateral da central de triagem |
 | Gênero | Simulação arcade educacional para um jogador |
 | Plataforma | Navegador desktop no Windows; mouse, teclado e toque |
-| Versão do jogo | 2.0.0 |
+| Versão do jogo | 3.1.0 |
 | Tecnologia | JavaScript ES Modules, Phaser 3.90.0, Vite 6.4.6 e Vitest 4.1.12 |
 | Código entregue | https://github.com/AmaralCharle/Trilha-seletiva ; projeto com fonte, assets e testes |
 | Integrantes e matrículas | Pendente de informação do grupo; máximo de cinco integrantes |
@@ -127,6 +127,18 @@ A precisão usa acertos divididos pelo total previsto da tentativa, inclusive it
 | Resolução única | Uma identidade de resíduo só pode ser contabilizada uma vez |
 | Reinício | Cria nova tentativa; a tentativa abandonada não concede estrelas |
 
+### Desafio Infinito complementar
+
+O arcade fica disponível desde o início, sem exigir conclusão da campanha. Começa com três vidas, 85 px/s, intervalo2,5 s e cinco categorias. Não possui relógio global nem lote final. Acerto vale10 pontos; a partir do terceiro seguido vale20 e a partir do décimo vale30. Erro, preparação incorreta ou objeto perdido custa uma vida e zera a sequência. Acerto não concede vida. A pontuação nunca fica negativa. O mesmo uid só pode ser resolvido uma vez.
+
+A última vida encerra imediatamente a simulação. Pendentes restantes não descontam vidas e aparecem separadamente do total resolvido. A precisão é acertos/resolvidos, ou zero sem decisões. A tela GAME OVER informa pontuação, onda, acertos, erros, perdas, melhor combo, precisão e posição local quando houver. O jogador pode tentar novamente, abrir ranking ou retornar ao menu. O apelido tem até 15 caracteres, padrão Jogador. Dez registros locais são ordenados por pontos, combo, onda e data; limpar recordes exige confirmação e não altera a campanha. Abandono não entra no ranking.
+
+### Apresentação dos resultados na versão 3.1
+
+O domínio conclui a sessão uma única vez. ResultFlow salva em onStart e protege a apresentação contra duplicatas. A derrota congela geração e interação, reduz a iluminação, reage nas pequenas luzes e mostra Eco com expressão de erro. A introdução dura 1,75 s, pode ser pulada e conduz a um painel persistente. Navegar ou reiniciar cancela callbacks antigos. Game Over usa música original de 6,4 s sem loop; vitória usa vinheta própria. As vozes musicais são trocadas em sequência, sem simultaneidade.
+
+Na campanha, falhar pelo prazo exibe TEMPO ESGOTADO e falhar na meta exibe DESAFIO NÃO CONCLUÍDO. O resultado mostra dica do objeto mais errado. Não há vidas nessas fases. Uma derrota não libera próxima etapa. O motor continua avaliando suas condições explícitas de aprovação, sem transformar toda ocorrência de prazo em derrota se a meta já foi cumprida.
+
 ### Controles
 
 Arrastar o objeto e soltar na lixeira funciona como entrada principal. Também é possível clicar no item e depois no destino. As teclas de 1 a 5 escolhem as lixeiras disponíveis na ordem visual; Tab seleciona o próximo item, E retira restos da embalagem selecionada e Esc pausa ou retoma. Botões visíveis oferecem pausa, preparação e repetição da dica. Não é necessário identificar uma lixeira apenas pela cor.
@@ -147,6 +159,30 @@ Pontos comunicam consistência e não compram vantagens. Tempo organiza a duraç
 
 Os valores principais preservam a configuração original. A cena usa canvas lógico de 1280 × 720 e aproximadamente 1100 px de percurso útil, mais longo que a janela original de 960 px. Mantidas as velocidades, isso aumenta a tolerância antes de um item sair; não é uma comparação direta de dificuldade por velocidade isolada. A cena limita a seis itens simultâneos e suspende novas chegadas enquanto está cheia. O treino usa três itens a 45 px/s; a revisão não tem cronômetro e mantém um item parado por vez, sem perdas por borda. Essas escolhas favorecem reconhecimento e controle, mas ainda precisam de balanceamento com pessoas. O desbloqueio é sequencial: aprovação libera o nível seguinte, até o quinto. A revisão usa as dificuldades registradas e remove o limite de tempo e a perda por saída da esteira. Ela apresenta um item parado por vez para permitir reflexão. A última decisão errada ou perdida tem prioridade; uma resposta correta posterior reduz a prioridade daquele item, e a frequência histórica desempata. Essa mudança redistribui a prática sem comprovar domínio fora do jogo. Seu desempenho fica separado do desbloqueio da trilha.
 
+### Ondas do arcade
+
+A cada dez resíduos resolvidos a onda cresce, incluindo erros e perdas. O limite é seis objetos simultâneos e150 px entre novas chegadas. A geração suspende chegadas quando não há espaço, evitando sobreposição impossível.
+
+| Onda | Velocidade px/s | Intervalo s |
+|---|---|---|
+| 1 | 85 | 2,5 |
+| 2 | 95 | 2,3 |
+| 3 | 110 | 2,1 |
+| 4 | 125 | 1,9 |
+| 5 | 140 | 1,7 |
+| 6 | 155 | 1,5 |
+| 7 | 170 | 1,4 |
+| 8 | 185 | 1,3 |
+| 9 | 200 | 1,2 |
+| 10 | 210 | 1,1 |
+| 11 em diante | cresce5 por onda até 240 | 1,1 |
+
+As designações são Iniciante, Operador a partir da3, Especialista da5, Mestre da Triagem da7 e Lenda da Reciclagem da10. Confundíveis entram progressivamente após a onda2, e preparação após a3. Essa progressão ainda precisa de balanceamento com pessoas.
+
+### Variação dos resíduos
+
+Partidas normais usam nova entropia, amostragem balanceada e Fisher–Yates com restrições leves. Mantêm quantidades, categorias e cotas de confundíveis e preparação; evitam trincas de uma categoria quando há alternativas e reduzem ciclos curtos. Sementes fixas são usadas em testes. O tutorial acompanhado conserva uma sequência didática. A revisão prioriza a última dificuldade ainda não corrigida, com frequência histórica no desempate. Aleatoriedade não significa aumento comprovado de aprendizagem.
+
 ### Alavancas de dificuldade
 
 Quantidade de resíduos, categorias permitidas, velocidade, intervalo, presença de confundíveis, necessidade de preparação, tempo e meta ficam em `src/config/levels.js`. Regras de pontuação ficam em `src/config/rules.js`. A largura do percurso, o limite de seis itens e os valores do treino e da revisão ficam na integração e na cena. Alterações futuras devem registrar motivo e dados usados no balanceamento.
@@ -163,7 +199,7 @@ Desenvolvimento e realização aparecem nas estrelas e no desbloqueio; autonomia
 
 ### Perfis de jogador
 
-Realizadores podem buscar três estrelas e completar a trilha. Exploradores podem consultar dicas, reconhecer exceções e comparar os resíduos. Não há ranking competitivo nem modo social; esses perfis não são prioridade desta versão.
+Realizadores podem buscar três estrelas e completar a trilha. Exploradores podem consultar dicas, reconhecer exceções e comparar os resíduos. A campanha não usa ranking competitivo. O arcade atende a busca por recordes com dez marcas locais para autossuperação; não há competição online nem modo social.
 
 ### Decisões éticas e cuidado com o tema
 
@@ -214,7 +250,11 @@ O fluxo inclui início, instruções e tutorial, mapa da trilha, jogo, pausa, re
 
 ### Áudio e assets
 
-Os efeitos reforçam acerto e erro sem transmitir informação exclusiva. Não houve alteração da síntese sonora nesta atualização visual. Música ambiente é opcional e não é requisito para a mecânica. A origem e a licença dos materiais estão em `docs/CREDITOS.md`; recursos originais sem comprovação de licença não devem ser redistribuídos por presunção.
+A apresentação reutiliza as ilustrações originais locais da versão 2, acrescentando piscar e pequenos gestos de Eco, indicadores em tubos e oscilação de transporte e sombra ao arrastar. Os arquivos SVG são rasterizados uma vez no carregamento. Movimento reduzido desativa efeitos decorativos.
+
+Há sete trilhas de modo distintas: fases 1–5 em 92,108,116,124 e144 BPM, revisão74 BPM e arcade136 BPM. São composições instrumentais originais de síntese local, sem samples externos. Duas vinhetas adicionais sem repetição, gameover de 6,4 s e victory de 5,2 s, separam derrota e vitória. Doze efeitos cobrem seleção, arraste, acerto, erro, lixeira, combos, desbloqueio, vitória, derrota, recorde e onda.
+
+AudioManager usa o Phaser, aguarda interação e mantém uma voz musical. Fade-out termina antes da próxima trilha; pausa preserva posição. Música e efeitos têm volumes independentes persistidos. Falha de áudio não bloqueia o jogo. No menu o fundo musical é silencioso. Os 21 WAVs são originais dedicados CC0; tools/generate-audio.mjs permite recriá-los. O inventário detalhado e licenças ficam em CREDITOS.md e AUDIO_3.md; DejaVu Sans preserva seu aviso de terceiros.
 
 ## 12 Arquitetura técnica
 
@@ -222,13 +262,21 @@ Os efeitos reforçam acerto e erro sem transmitir informação exclusiva. Não h
 
 A aplicação separa configuração, catálogo, domínio determinístico, armazenamento, cena Phaser e interface externa ao canvas. `src/main.js` coordena a navegação; `src/scenes/FactoryScene.js` desenha e atualiza a central; `src/systems/session.js` decide as regras; `src/systems/storage.js` salva e exporta resultados. `src/ui/art.js` contém as ilustrações originais de resíduos, Eco e lixeiras. `src/ui/factoryArt.js` define oficina, cidade e engrenagens; `src/entities/FactoryEnvironment.js` compõe as camadas e suas animações. A renderização carrega os SVGs em texturas no início; não redesenha o SVG completo em cada quadro. A descrição detalhada de dependências e funções consta em `docs/ARQUITETURA.md`.
 
+### Componentes adicionados
+
+InfiniteSession controla vidas, combo e ondas sem acumular um deck infinito. getDifficulty define parâmetros limitados. WasteSequenceGenerator fornece resíduos; classifyWaste concentra a classificação compartilhada com a campanha. leaderboard.js armazena os dez recordes em chave própria. AudioManager controla carregamento, reprodução e transições. ResultFlow coordena a apresentação e evita repetição da conclusão. arcade.js contém apenas marcação de telas, escapando apelidos.
+
 ### Estados ciclo tempo e colisão
 
 A interface inicia uma tentativa com configuração e lote próprios. O ciclo de atualização do Phaser converte o delta de milissegundos para segundos, move os resíduos e avança o domínio. A soltura é comparada às regiões das lixeiras; uma saída da área útil registra perda. A pausa interrompe simulação, cronômetro, entrada de classificação e animações da cena. `FactoryEnvironment.update` mantém animações ambientais leves, como engrenagens, roletes, indicadores e movimento discreto do bairro; respeita a pausa e a preferência de movimento reduzido. Descartes usam animação de tampa, brilho e partículas; a cena limpa efeitos transitórios ao reiniciar ou voltar ao menu. O domínio impede contabilização duplicada e encerramentos concorrentes.
 
+O fluxo complementar é menu, apresentação arcade, play, result-intro, arcade-result e ranking. A cena só movimenta ou classifica em play e fora de pausa. Game Over congela a fábrica e fica aberto até uma ação; reinício cria nova sessão, limpa efeitos e cancela temporizadores. A identidade de resíduos é controlada pelo domínio, não pela aparência.
+
 ### Dados e persistência
 
 A tentativa armazena acertos, erros, perdas, sequência, pontuação, tempo e decisões por identidade. O progresso inclui maior nível liberado, melhores estrelas, preferências e histórico local. Não há envio de métricas para servidor. Exportar CSV permite ao grupo analisar tentativas. A indisponibilidade do armazenamento deve ser informada; apagar dados do navegador remove o progresso local.
+
+O ranking usa trilha-seletiva-infinite-v1, separado de trilha-seletiva-v1 da campanha. São dez entradas com apelido, pontos, onda, combo, acertos, erros, perdas, precisão e data. Preferências antigas são migradas sem apagar histórico. Um Map de até seis pendentes e listas recentes limitadas permitem jogar por tempo indeterminado sem memória proporcional à duração. Falhas de armazenamento exibem aviso e mantêm a sessão em memória.
 
 ### Como executar
 
@@ -267,11 +315,11 @@ A tabela foi conferida por inspeção dos arquivos da reconstrução. “Impleme
 | Revisão sem cronômetro e priorização pela última decisão errada ou perdida, com frequência histórica no desempate | 5, 7 | src/main.js; src/systems/session.js | start; buildDeck | Implementado |
 | Pausa, Esc, retomada e pausa quando a página fica oculta | 6, 12 | src/main.js; src/systems/session.js; src/scenes/FactoryScene.js | pause, resume, visibilitychange; Session.tick; FactoryScene.update | Implementado |
 | Reinício e abandono sem recompensa | 6 | src/main.js; src/systems/storage.js | start, actions.restart, actions.abandon; saveAttempt | Implementado |
-| Feedback, partículas e sons opcionais | 5, 11 | src/main.js; src/scenes/FactoryScene.js | feedback, tone; FactoryScene.classify, animateBin, feedbackParticles | Implementado |
+| Feedback, partículas e sons opcionais | 5, 11 | src/main.js; src/scenes/FactoryScene.js | feedback, fx; FactoryScene.classify, animateBin, feedbackParticles | Implementado |
 | Resultado, próxima fase e conclusão da jornada | 6, 9, 11 | src/main.js | finish, actions.next, stats | Implementado |
 | Histórico, erros por objeto e categoria e métricas | 12, 14 | src/systems/session.js; src/systems/storage.js | Session.finish; saveAttempt | Implementado |
 | Exportação CSV | 14 | src/systems/storage.js; src/main.js | exportCSV; actions.export | Implementado |
-| Áudio, volume e tela cheia quando suportada | 2, 11 | src/main.js; src/systems/storage.js | settings, tone, actions.sound, actions.fullscreen; saveSettings | Implementado |
+| Áudio, volume e tela cheia quando suportada | 2, 11 | src/main.js; src/systems/storage.js | settings, fx, actions.sound, actions.fullscreen; saveSettings | Implementado |
 | Reset e aviso de armazenamento indisponível | 12 | src/systems/storage.js; src/main.js | resetProgress, loadProgress, persist; render, toast | Implementado |
 | Ilustrações locais e erro de carregamento | 11, 12 | src/ui/art.js; src/scenes/FactoryScene.js; src/main.js | itemSVG, ecoPoseSVG, binBodySVG, binLidSVG; FactoryScene.preload; asset-error | Implementado |
 | Oficina, cidade e engrenagens vetoriais | 9, 11 | src/ui/factoryArt.js | factorySVG, citySVG, gearSVG | Implementado por inspeção |
@@ -283,10 +331,39 @@ A tabela foi conferida por inspeção dos arquivos da reconstrução. “Impleme
 | Estrelas, trilha e medalha da interface | 7, 11 | src/main.js; src/styles.css | starPath, stars, medal, map, finish, stats | Implementado por inspeção |
 | Fonte local redistribuída com aviso | 11, 16 | public/assets/DejaVuSans.ttf; public/assets/LICENCA_DejaVu.txt; src/styles.css | @font-face Local | Empacotado; licença preservada |
 
+### Rastreabilidade da evolução 3 e do encerramento
+
+| Regra ou mecânica | Seção | Arquivo real | Classe ou função | Situação |
+|---|---|---|---|---|
+| Classificação comum aos dois modos | 5, 6 | src/systems/classification.js | classifyWaste | Implementado |
+| Embaralhamento com sementes e preservação de cotas | 6, 7 | src/systems/sequence.js; src/systems/session.js | fisherYates; constrainCategoryOrder; buildDeck | Implementado |
+| Geração contínua com histórico recente limitado | 6, 7 | src/systems/sequence.js | WasteSequenceGenerator.next | Implementado |
+| Três vidas, resolução única e combos 10/20/30 | 6 | src/systems/infiniteSession.js | InfiniteSession.resolve; miss; loseLife | Implementado |
+| Ondas a cada dez decisões e limites de velocidade | 7 | src/config/infinite.js; src/systems/infiniteSession.js | getDifficulty; completeDecision | Implementado |
+| Seis simultâneos e espaçamento mínimo 150 px | 6, 7 | src/scenes/FactoryScene.js; src/systems/infiniteSession.js | update; nextItem | Implementado |
+| Precisão do arcade só sobre resolvidos | 6 | src/systems/infiniteSession.js | precision; finish | Implementado |
+| Ranking local de dez sem alterar a campanha | 6, 12 | src/systems/leaderboard.js | loadLeaderboard; saveInfiniteResult; clearLeaderboard | Implementado |
+| Apelido limitado e escapado na interface | 6, 12 | src/systems/leaderboard.js; src/ui/arcade.js | normalizeNickname; escapeHTML | Implementado |
+| Vidas, ondas e aviso de recorde no HUD | 6, 11 | src/main.js; src/ui/arcade.js | startInfinite; updateHUD; waveBanner; hearts | Implementado |
+| Sete músicas de modo e dois resultados sem loop | 11 | src/systems/AudioManager.js; src/data/audioManifest.js | preloadAudio; playMusic; pump | Implementado |
+| Volumes, gesto, pausa e nenhuma música sobreposta | 11, 12 | src/systems/AudioManager.js; src/systems/storage.js | unlock; fadeOut; pause; resume; setSettings; saveSettings | Implementado |
+| Síntese reprodutível de 21 WAVs locais | 11, 16 | tools/generate-audio.mjs | addTone; drum; wav | Implementado |
+| Encerramento único, cancelamento e pular introdução | 6, 11 | src/systems/ResultFlow.js; src/main.js | start; skip; cancel; defeatIntro | Implementado |
+| Fábrica congelada, iluminação e reação das luzes | 9, 11 | src/scenes/FactoryScene.js | presentDefeat; clearShutdown; update | Implementado |
+| Derrotas da campanha e dica contextual sem desbloqueio | 6, 11 | src/main.js; src/systems/session.js | finish; finishCampaign; Session.finish | Implementado |
+| Piscar, gestos e transporte leve | 9, 11 | src/ui/art.js; src/entities/FactoryEnvironment.js; src/scenes/FactoryScene.js | ecoPoseSVG; update | Implementado |
 
 ## 14 Testes e validação
 
-### Validação técnica
+### Validação técnica da versão 3.1
+
+Foram aprovados 62 testes em 8 arquivos com Vitest 4.1.12. Os novos casos cobrem variação com sementes, cotas e categorias, 300 amostras de geração, 1400 decisões no arcade, combos exatos, vidas, duplicatas, limites de onda, memória limitada, ranking e isolamento da campanha, migração de áudio, uma voz musical, pausa, arquivos reais e transições de resultado idempotentes. O teste automatizado não equivale a uma passagem manual de todas as ondas ou validação com jogadores.
+
+No navegador, a evolução 3 mostrou início do arcade, acerto de 10 pontos, aviso de recorde, pausa, game over após três perdas, ranking com apelido e persistência após recarregar. Os volumes23%/34% e silêncio geral foram preservados. A versão 3.1 recebeu teste específico da tela GAME OVER; as demais observações e limites de cada rodada estão em TESTES.md. Não foi medida qualidade auditiva por especialistas nem FPS sustentado.
+
+Na correção 3.1, a tentativa arcade testada terminou com 10 pontos, combo 1, onda 1, um acerto e três perdas, precisão 25%, primeiro lugar local. O botão Pular animação foi acionado e o resultado ficou aberto até a escolha. Reiniciar restaurou três vidas e zero pontos. Uma derrota por prazo na fase 2 apresentou TEMPO ESGOTADO, 16 perdas e dica; o histórico passou de 3 para 4 tentativas, sem duplicação, e as estrelas anteriores foram preservadas. A fase 3 continuou bloqueada. Esses testes foram operados pelo assistente e não representam pessoas externas.
+
+### Evidências técnicas anteriores
 
 Na versão 2.0.0, foram executados 29 testes automatizados em quatro arquivos com Vitest 4.1.12: os 26 testes de domínio e persistência foram preservados e três testes de contrato dos assets foram acrescentados. Eles verificam ilustrações distintas para os 27 resíduos, quatro poses de Eco, separação entre corpo e tampa das lixeiras, camadas locais do cenário e codificação de Unicode. Os testes de contrato não substituem a inspeção visual da arte. O build de produção passou novamente após os ajustes finais. A distribuição foi servida na porta 4173: menu e cenário renderizaram, e os logs filtrados desse endereço não apresentaram erros observados.
 
@@ -317,7 +394,7 @@ O relatório técnico deve separar defeitos reproduzíveis de limitações do es
 
 ### Como alguém burla o jogo
 
-A pessoa pode decorar atalhos ou memorizar a ordem em vez de observar o material. Estrelas usam precisão sobre o lote total, e o domínio bloqueia eventos repetidos para a mesma identidade; isso reduz exploração por cliques duplicados. Um bom resultado permanece uma medida de desempenho no jogo, não uma certificação de comportamento ambiental.
+A pessoa pode decorar atalhos ou repetir objetos sem transferir o reconhecimento para situações novas. O embaralhamento reduz a exploração de uma ordem fixa, sem eliminar a possibilidade de acertos por tentativa. Estrelas usam precisão sobre o lote total, e o domínio bloqueia eventos repetidos para a mesma identidade; isso reduz exploração por cliques duplicados. Um bom resultado permanece uma medida de desempenho no jogo, não uma certificação de comportamento ambiental.
 
 ### Risco de mensagem errada
 
@@ -342,6 +419,9 @@ Com mais um mês, realizar testes com público, ajustar a legibilidade e o ritmo
 Nenhum nome, matrícula ou distribuição de trabalho foi inventado. Cada integrante deverá saber explicar as regras, a separação do código e as decisões de design.
 
 ### Uso de IA e ferramentas
+
+A evolução 3 e a correção 3.1 também utilizaram Codex/OpenAI para gerador aleatório, sessão arcade, ranking, composição algorítmica, controle de áudio, transição de resultado e testes. As composições não contêm samples de terceiros e os arquivos são gerados localmente. Essa declaração não substitui a revisão humana nem comprova autoria ou contribuições pessoais de integrantes ainda não informados.
+
 
 Codex, da OpenAI, foi utilizado para analisar o projeto Pygame fornecido, propor o redesign, gerar código JavaScript, ilustrações vetoriais programáticas, testes automatizados e rascunhos de documentação. Na atualização visual 2, a assistência incluiu os 27 resíduos, quatro poses de Eco, lixeiras com tampas separadas, oficina, cidade, engrenagens e interface. As cinco referências visuais serviram como direção criativa e não foram copiadas para os assets. DejaVu Sans é um recurso de terceiros redistribuído com o aviso Bitstream Vera/DejaVu preservado em public/assets; não é arte gerada por IA. Os arquivos gerados estão no projeto de navegador. A revisão humana do grupo e as alterações feitas por seus integrantes devem ser registradas antes da entrega; o uso de IA não substitui essa responsabilidade. Vite, Phaser e Vitest são dependências de terceiros com suas licenças próprias.
 
@@ -370,13 +450,16 @@ canResolve(uid) {
 
 ### Classificação e preparação
 
-`src/systems/session.js`, `Session.resolve`: a categoria é consultada no objeto confiável do lote, e uma embalagem marcada com restos só acerta depois da preparação.
+A mesma função em src/systems/classification.js é usada pelas sessões da campanha e do arcade.
 
 ```javascript
-const item = this.deck[uid];
-const ok = choice === item.category && (!item.needsPrep || prepared);
-const reason = ok ? 'correct'
-  : choice !== item.category ? 'category' : 'preparation';
+export function classifyWaste(item, choice, prepared = false) {
+  if (!item || choice !== item.category)
+    return { ok: false, reason: 'category' };
+  if (item.needsPrep && !prepared)
+    return { ok: false, reason: 'preparation' };
+  return { ok: true, reason: 'correct' };
+}
 ```
 
 ### Precisão final
@@ -392,27 +475,35 @@ const precision = this.deck.length ? this.correct / this.deck.length : 0;
 
 ## Anexo B Capturas reais
 
-As imagens seguintes foram capturadas da versão 2.0.0 executada no navegador integrado, em 1280 × 720, durante a verificação técnica. Elas documentam a atualização visual 2 e os estados observados; não representam um teste externo de aprendizagem.
+As imagens a seguir foram capturadas durante a implementação3.0 e a correção 3.1 no navegador integrado. Os apelidos QA identificam tentativas técnicas do assistente, sem pesquisa com pessoas.
 
-![Menu da atualização visual 2](capturas-v2/menu.jpg)
+![Menu da versão 3.1](capturas-v3/menu.jpg)
 
-Figura B1. Menu atual com oficina clara, Eco, identidade visual e entrada para a missão.
+Figura B1. Campanha, revisão, arcade e configurações preservando a identidade cartoon.
 
-![Trilha com a segunda fase desbloqueada](capturas-v2/trilha.jpg)
+![Desafio Infinito em andamento](capturas-v3/arcade.jpg)
 
-Figura B2. Trilha atual com estrelas da fase 1 e fase 2 desbloqueada após aprovação.
+Figura B2. HUD do arcade com pontos, combo, vidas e cinco destinos; aviso de recorde após um acerto.
 
-![Feedback de classificação correta no treino](capturas-v2/jogo-acerto.jpg)
+![Introdução de derrota da campanha](capturas-v3/encerramento.jpg)
 
-Figura B3. Treino com HUD, resíduos individuais, símbolos de material nas lixeiras e retorno de acerto.
+Figura B3. Eco reage ao prazo encerrado e o jogador pode pular a apresentação. Não há vidas na campanha.
 
-![Feedback de classificação incorreta na revisão](capturas-v2/erro.jpg)
+![Game Over do arcade com recorde](capturas-v3/game-over.jpg)
 
-Figura B4. Balde plástico enviado a REJEITO na revisão; Eco muda de expressão e explica o destino pelo material.
+Figura B4. Resultado persistente após a última vida, com precisão dos resolvidos, onda, combo e três opções funcionais.
 
-![Resultado da fase 1 com três estrelas](capturas-v2/resultado.jpg)
+![Ranking local](capturas-v3/ranking.jpg)
 
-Figura B5. Fase 1 concluída com 12/12, 100%, 220 pontos, três estrelas, zero perdas e opção de próxima etapa.
+Figura B5. Marca de 10 pontos à frente das marcas de zero; dados específicos deste navegador de teste.
+
+![Derrota por prazo na campanha](capturas-v3/campanha-derrota.jpg)
+
+Figura B6. Tempo esgotado, 16 perdas, dica educativa e retorno ao mapa, sem avanço após derrota.
+
+![Preferências independentes de áudio](capturas-v3/audio.jpg)
+
+Figura B7. Volumes separados e silêncio geral, com preferências preservadas após recarregar.
 
 ## Pendências para a entrega acadêmica
 

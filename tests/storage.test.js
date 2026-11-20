@@ -52,7 +52,7 @@ describe('local persistence', () => {
     const { saveSettings, resetProgress, saveAttempt, loadProgress } = await import('../src/systems/storage.js');
     saveAttempt(result());
     saveSettings({ sound: false, volume: 9 });
-    expect(loadProgress().settings).toEqual({ sound: false, volume: 1 });
+    expect(loadProgress().settings).toMatchObject({ sound: false, volume: 1, musicVolume: 0.22, effectsVolume: 1 });
     resetProgress();
     expect(loadProgress()).toMatchObject({ unlocked: 1, stars: {}, history: [] });
   });

@@ -97,13 +97,13 @@ describe('buildDeck', () => {
     { id: 'a', category: 'paper' }, { id: 'b', category: 'plastic', needsPrep: true },
     { id: 'c', category: 'reject', tricky: true }, { id: 'd', category: 'paper', tricky: true },
   ];
-  it('makes a repeatable balanced beginner deck without tricky or prep demands', () => {
-    const deck = buildDeck(catalog, level);
+  it('makes a seeded balanced beginner deck without tricky or prep demands', () => {
+    const deck = buildDeck(catalog, level, [], false, { seed: 42 });
     expect(deck).toHaveLength(12);
     expect(deck.every(item => !item.tricky && !item.needsPrep)).toBe(true);
     expect(deck.filter(item => item.category === 'paper')).toHaveLength(6);
     expect(deck.map(item => item.uid)).toEqual([...Array(12).keys()]);
-    expect(buildDeck(catalog, level)).toEqual(deck);
+    expect(buildDeck(catalog, level, [], false, { seed: 42 })).toEqual(deck);
   });
   it('introduces tricky items at phase3 and preparation at phase4', () => {
     const phase3 = buildDeck(catalog, { ...level, id: 3, categories: ['paper', 'plastic', 'reject'] });

@@ -16,6 +16,7 @@ export class FactoryEnvironment {
     this.gears=[scene.add.image(241,365,'gear').setDisplaySize(66,66).setDepth(-7),scene.add.image(1065,366,'gear').setDisplaySize(52,52).setDepth(-7)];
     this.rollerShines=Array.from({length:35},(_,i)=>scene.add.rectangle(62+i*34,426,4,41,0xecf4d9,.28).setDepth(-6));
     this.chevrons=Array.from({length:14},(_,i)=>{const g=scene.add.graphics().setDepth(-6);g.lineStyle(2,0xe3efc8,.42).beginPath().moveTo(-4,-3).lineTo(1,0).lineTo(-4,3).strokePath();g.y=465;g.x=90+i*80;return g;});
+    this.pipeLights=[scene.add.circle(213,229,3,0xf3e6a0).setDepth(-5),scene.add.circle(1102,252,3,0xf3e6a0).setDepth(-5)];
     this.lamps=[scene.add.circle(43,374,3,0xebffb5).setDepth(-5),scene.add.circle(1237,374,3,0xebffb5).setDepth(-5)];
     this.hero=scene.add.container(0,0).setDepth(2);
     this.heroShadow=scene.add.ellipse(977,531,231,35,0x31583f,.18);this.hero.add(this.heroShadow);
@@ -35,6 +36,8 @@ export class FactoryEnvironment {
     this.rollerShines.forEach((r,i)=>{r.x=62+i*34+Math.sin(t*4.3+i*.2)*7;r.alpha=.14+(Math.cos(t*4.3+i*.2)+1)*.11;});
     this.chevrons.forEach((r,i)=>r.x=78+((i*80+t*30)%1120));
     this.lamps.forEach((lamp,i)=>lamp.alpha=.65+Math.sin(t*2+i)*.25);
+    this.pipeLights.forEach((lamp,i)=>lamp.alpha=.4+(Math.sin(t*1.7+i)+1)*.25);
+    this.eco.setTexture(t%4.4<.14?'eco-blink':t%10>9.2?'eco-guide':'eco-idle');
     this.eco.y=379+Math.sin(t*1.5)*5;
     this.eco.angle=Math.sin(t*.8)*1.4;
     this.heroShadow.scaleX=1+Math.sin(t*1.5)*.025;

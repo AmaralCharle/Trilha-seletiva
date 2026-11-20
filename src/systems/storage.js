@@ -1,5 +1,5 @@
 const KEY = 'trilha-seletiva-v1';
-const fresh = () => ({ version: 1, unlocked: 1, stars: {}, history: [], settings: { sound: true, volume: 0.35 } });
+const fresh = () => ({ version: 1, unlocked: 1, stars: {}, history: [], settings: { sound: true, volume: 0.35, musicVolume: 0.22, effectsVolume: 0.35 } });
 let fallback = fresh();
 let storageNotice = '';
 let memoryOnly = false;
@@ -29,6 +29,8 @@ export function loadProgress() {
     progress.settings.sound = parsed.settings?.sound !== false;
     const volume = parsed.settings?.volume;
     progress.settings.volume = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 0.35;
+    progress.settings.musicVolume = Number.isFinite(parsed.settings?.musicVolume) ? Math.max(0, Math.min(1, parsed.settings.musicVolume)) : 0.22;
+    progress.settings.effectsVolume = Number.isFinite(parsed.settings?.effectsVolume) ? Math.max(0, Math.min(1, parsed.settings.effectsVolume)) : progress.settings.volume;
     fallback = clone(progress);
     return { ...progress, notice: storageNotice };
   } catch {
@@ -61,7 +63,8 @@ export function saveAttempt(result) {
 export function saveSettings(settings) {
   const progress = loadProgress();
   if (typeof settings.sound === 'boolean') progress.settings.sound = settings.sound;
-  if (Number.isFinite(settings.volume)) progress.settings.volume = Math.max(0, Math.min(1, settings.volume));
+  if (Number.isFinite(settings.volume)) { progress.settings.volume = Math.max(0, Math.min(1, settings.volume)); if (!Number.isFinite(settings.effectsVolume)) progress.settings.effectsVolume = progress.settings.volume; }
+  for (const key of ['musicVolume','effectsVolume']) if (Number.isFinite(settings[key])) progress.settings[key] = Math.max(0, Math.min(1, settings[key]));
   return persist(progress);
 }
 

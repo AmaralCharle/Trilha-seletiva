@@ -17,7 +17,7 @@ A atualização visual 2 usa ilustrações SVG originais geradas em código com 
 | Corpos e tampas de cinco lixeiras | src/ui/art.js, binBodySVG e binLidSVG | SVGs originais separados para permitir animação; símbolos de material desenhados em código |
 | Oficina, cidade e engrenagens | src/ui/factoryArt.js | SVGs originais do cenário, sem referências externas embutidas |
 | Estrelas, medalha e interface | src/main.js e src/styles.css | Geometria vetorial e estilos produzidos para o projeto |
-| Efeitos sonoros | src/main.js, tone | Osciladores Web Audio sintetizados localmente; sem faixa musical de terceiros |
+| Músicas e efeitos originais | public/assets/audio; tools/generate-audio.mjs; src/systems/AudioManager.js | 21 WAVs originais sintetizados por código com assistência de IA, CC0 1.0; reprodução pelo Phaser |
 | Fonte DejaVu Sans | public/assets/DejaVuSans.ttf | Reaproveitada do pacote original; recurso de terceiros, sem alteração |
 | Aviso da fonte | public/assets/LICENCA_DejaVu.txt | Aviso Bitstream Vera/DejaVu preservado ao lado da fonte |
 
@@ -52,3 +52,7 @@ Consulta em 19/11/2026. As fontes descrevem seus contextos e não tornam univers
 Codex, da OpenAI, auxiliou a análise estática do original, o redesign da experiência, a geração de JavaScript, as ilustrações vetoriais programáticas, testes e documentação. Na atualização visual 2, essa assistência abrange o novo ambiente em camadas, os resíduos individuais, as poses de Eco, as lixeiras com partes separadas e os estados da interface. A assistência abrange o projeto de navegador em `src`, `tests` e `docs`. O relatório técnico distingue testes automatizados de testes externos com pessoas.
 
 Os integrantes devem preencher seus nomes, matrículas e contribuições reais e registrar a revisão humana realizada. Não foram inventados entrevistas, participantes, aprovação de usuários, medições de aprendizagem ou resultados de desempenho em hardware não testado. A autoria e a responsabilidade da entrega acadêmica devem ser assumidas pelo grupo, que precisa saber explicar o material entregue.
+
+A evolução 3 e a correção 3.1 também receberam assistência de Codex/OpenAI na composição algorítmica, gerador aleatório, sessão arcade, ranking e testes. Nenhum participante humano ou resultado de pesquisa foi inventado.
+
+O inventário completo em AUDIO_3.md inclui sete loops de modo, Game Over de 6,4 segundos, vitória de 5,2 segundos e doze efeitos. Os áudios originais são dedicados a CC0 1.0, sem alterar as licenças das fontes, das bibliotecas ou das referências visuais. Não há amostras comerciais incorporadas.
