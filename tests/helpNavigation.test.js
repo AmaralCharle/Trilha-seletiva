@@ -232,7 +232,7 @@ describe('screen navigation', () => {
   it.each([
     ['menu', 'menu'],
     ['map', 'map'],
-  ])('abandons paused review without saving and returns to its origin (%s)', async (origin, expectedScreen) => {
+  ])('abandons paused review without recording an attempt and returns to %s', async (origin, expectedScreen) => {
     const campaignSave = JSON.stringify({
       version: 1,
       unlocked: 1,
@@ -257,6 +257,7 @@ describe('screen navigation', () => {
 
     expect(ui.dataset.screen).toBe(expectedScreen);
     expect(memory.get(campaignKey)).toBe(campaignSave);
+    expect(JSON.parse(memory.get(campaignKey)).history).toEqual([]);
     expect(setItem).not.toHaveBeenCalled();
   });
 });
