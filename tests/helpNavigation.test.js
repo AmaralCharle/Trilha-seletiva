@@ -205,4 +205,26 @@ describe('help screen navigation', () => {
       stars: {},
     });
   });
+
+  it('returns an abandoned infinite session to its intro without saving ranking', async () => {
+    const rankingKey = 'trilha-seletiva-infinite-v1';
+    const rankingSave = JSON.stringify({ version: 1, entries: [] });
+    memory.set(rankingKey, rankingSave);
+
+    await import('../src/main.js');
+    clickAction('menu');
+    clickAction('infinite');
+    clickAction('beginInfinite');
+    window.listeners.keydown({ key: 'Escape', preventDefault() {} });
+
+    expect(modal.innerHTML).toContain('data-action="abandon">Voltar</button>');
+
+    clickAction('abandon');
+
+    expect(ui.dataset.screen).toBe('arcade');
+    expect(ui.innerHTML).toContain('data-action="beginInfinite"');
+    expect(ui.innerHTML).toContain('Começar desafio');
+    expect(memory.get(rankingKey)).toBe(rankingSave);
+    expect(setItem).not.toHaveBeenCalled();
+  });
 });
