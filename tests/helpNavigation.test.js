@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CATALOG } from '../src/data/catalog.js';
+import { BINS } from '../src/config/levels.js';
 
 vi.mock('phaser', () => ({
   default: {
@@ -127,6 +129,36 @@ describe('screen navigation', () => {
     expect(ui.innerHTML).toContain('Jogar campanha');
     expect(memory.get(campaignKey)).toBe(campaignSave);
     expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it('renders the complete visual waste guide below the existing help controls', async () => {
+    await import('../src/main.js');
+    clickAction('play');
+
+    expect(ui.dataset.screen).toBe('help');
+    const guideStart = ui.innerHTML.indexOf('<section class="help-guide"');
+    expect(guideStart).toBeGreaterThan(-1);
+    for (const action of ['Treinar com o Eco', 'Ver minha trilha', 'Voltar']) {
+      expect(ui.innerHTML.indexOf(`>${action}</button>`)).toBeLessThan(guideStart);
+    }
+
+    const categories = ['paper', 'plastic', 'glass', 'metal', 'reject'];
+    const expectedItems = categories.flatMap(category => CATALOG.filter(item => item.category === category));
+    const renderedItems = [...ui.innerHTML.matchAll(/data-guide-item="([^"]+)"/g)].map(([, id]) => id);
+    expect(renderedItems).toHaveLength(27);
+    expect(renderedItems).toEqual(expectedItems.map(item => item.id));
+    expect([...ui.innerHTML.matchAll(/class="help-guide-bin-image"/g)]).toHaveLength(5);
+    expect([...ui.innerHTML.matchAll(/class="help-guide-item-image"/g)]).toHaveLength(27);
+
+    for (const item of expectedItems) {
+      expect(ui.innerHTML).toContain(item.name);
+      expect(ui.innerHTML).toContain(item.tip);
+      expect(ui.innerHTML).toContain(`Lixeira ${BINS[item.category].name}`);
+    }
+    for (const category of categories) {
+      expect(ui.innerHTML).toContain(`data-guide-category="${category}"`);
+      expect(ui.innerHTML).toContain(BINS[category].symbol);
+    }
   });
 
   it('returns from map to help, then from help to menu', async () => {
