@@ -136,6 +136,14 @@ describe('screen navigation', () => {
     clickAction('play');
 
     expect(ui.dataset.screen).toBe('help');
+    expect(ui.innerHTML).toContain('<b>Olhe, escolha e separe.</b>');
+    expect(ui.innerHTML).toContain('Arraste o resíduo da esteira até a lixeira.');
+    expect(ui.innerHTML).toContain('Teclado: <kbd>1</kbd> a <kbd>5</kbd> escolhem a lixeira');
+    expect(ui.innerHTML).toContain('Acertou três seguidos? Os pontos dobram!');
+    expect(ui.innerHTML).toContain('data-action="tutorial">Treinar com o Eco</button>');
+    expect(ui.innerHTML).toContain('data-action="map">Ver minha trilha</button>');
+    expect(ui.innerHTML).toContain('data-action="menu">Voltar</button>');
+
     const guideStart = ui.innerHTML.indexOf('<section class="help-guide"');
     expect(guideStart).toBeGreaterThan(-1);
     for (const action of ['Treinar com o Eco', 'Ver minha trilha', 'Voltar']) {
@@ -143,21 +151,24 @@ describe('screen navigation', () => {
     }
 
     const categories = ['paper', 'plastic', 'glass', 'metal', 'reject'];
+    const groups = [...ui.innerHTML.matchAll(/<section class="help-guide-group" data-guide-category="([^"]+)"[\s\S]*?<\/section>/g)];
+    expect(groups.map(([, category]) => category)).toEqual(categories);
     const expectedItems = categories.flatMap(category => CATALOG.filter(item => item.category === category));
-    const renderedItems = [...ui.innerHTML.matchAll(/data-guide-item="([^"]+)"/g)].map(([, id]) => id);
+    const renderedItems = [...ui.innerHTML.matchAll(/<li class="help-guide-item" data-guide-item="([^"]+)">([\s\S]*?)<\/li>/g)];
     expect(renderedItems).toHaveLength(27);
-    expect(renderedItems).toEqual(expectedItems.map(item => item.id));
+    expect(renderedItems.map(([, id]) => id)).toEqual(expectedItems.map(item => item.id));
     expect([...ui.innerHTML.matchAll(/class="help-guide-bin-image"/g)]).toHaveLength(5);
     expect([...ui.innerHTML.matchAll(/class="help-guide-item-image"/g)]).toHaveLength(27);
 
-    for (const item of expectedItems) {
-      expect(ui.innerHTML).toContain(item.name);
-      expect(ui.innerHTML).toContain(item.tip);
-      expect(ui.innerHTML).toContain(`Lixeira ${BINS[item.category].name}`);
+    for (const [index, item] of expectedItems.entries()) {
+      const [, , row] = renderedItems[index];
+      expect(row).toContain(item.name);
+      expect(row).toContain(item.tip);
+      expect(row).toContain(`Lixeira ${BINS[item.category].name}`);
     }
-    for (const category of categories) {
-      expect(ui.innerHTML).toContain(`data-guide-category="${category}"`);
-      expect(ui.innerHTML).toContain(BINS[category].symbol);
+    for (const [index, category] of categories.entries()) {
+      const groupHTML = groups[index][0];
+      expect(groupHTML).toContain(BINS[category].symbol);
     }
   });
 
