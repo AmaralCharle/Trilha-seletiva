@@ -93,7 +93,7 @@ A especificação DOCX informa que a publicação 3.3 foi confirmada e registra 
 O estado de navegação é controlado por `screen` em `src/main.js`; não há roteador. As telas HTML são recriadas por `render()`; a cena Phaser continua sendo uma instância e muda entre menu, jogo e derrota.
 
 1. **Menu:** campanha, Desafio Infinito, revisão, ajuda, mapa, resultados, ranking, créditos e configurações. “Jogar campanha” abre ajuda/tutorial no primeiro acesso e o mapa se já há histórico.
-2. **Ajuda:** explica lixeiras e controles; inicia o tutorial ou abre o mapa.
+2. **Ajuda:** explica lixeiras e controles; oferece as opções de iniciar o tutorial (“Treinar com o Eco”), abrir o mapa (“Ver minha trilha”) ou retornar à tela inicial (“Voltar”).
 3. **Tutorial:** treinamento guiado de três itens; não grava tentativa de campanha nem altera estrelas.
 4. **Mapa:** cinco fases, estrelas e bloqueio sequencial; inclui revisão, estatísticas e reset seletivo.
 5. **Partida de campanha:** fase escolhida, revisão ou tutorial, HUD, meta, Eco, feedback e controles.
