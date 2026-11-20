@@ -260,4 +260,40 @@ describe('screen navigation', () => {
     expect(JSON.parse(memory.get(campaignKey)).history).toEqual([]);
     expect(setItem).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['menu', 'menu'],
+    ['map', 'map'],
+  ])('returns stats to %s without changing campaign progress', async (origin, expectedScreen) => {
+    const campaignSave = JSON.stringify({
+      version: 1,
+      unlocked: 1,
+      stars: {},
+      history: [],
+      settings: { sound: true, volume: 0.35 },
+    });
+    memory.set(campaignKey, campaignSave);
+
+    await import('../src/main.js');
+    clickAction('menu');
+    if (origin === 'map') {
+      clickAction('map');
+      expect(ui.innerHTML).toContain('data-action="stats">Meu desempenho</button>');
+    } else {
+      expect(ui.innerHTML).toContain('data-action="stats">Resultados</button>');
+    }
+    expect(ui.dataset.screen).toBe(origin);
+
+    clickAction('stats');
+
+    expect(ui.dataset.screen).toBe('stats');
+    expect(ui.innerHTML).toContain('data-action="export">Exportar CSV</button>');
+    expect(ui.innerHTML).toContain('data-action="statsBack">Voltar</button>');
+
+    clickAction('statsBack');
+
+    expect(ui.dataset.screen).toBe(expectedScreen);
+    expect(memory.get(campaignKey)).toBe(campaignSave);
+    expect(setItem).not.toHaveBeenCalled();
+  });
 });
