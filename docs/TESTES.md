@@ -1,3 +1,7 @@
+# Verificações da versão 3.3
+
+70 testes em 9 arquivos; detalhes da câmera, matriz visual e entradas em [MOBILE_3_3.md](MOBILE_3_3.md). Medições e screenshots reais em capturas-v33. As seções abaixo registram versões anteriores.
+
 # Verificações da versão 3.2
 
 67 testes em 9 arquivos aprovados; build Pages concluído. Reset seletivo, migração e fallback, hitboxes e geometria mobile possuem novos casos. Os testes de interface, dimensões, evidências e limites estão em [MOBILE_3_2.md](MOBILE_3_2.md). O relato abaixo é histórico da versão 3.1.

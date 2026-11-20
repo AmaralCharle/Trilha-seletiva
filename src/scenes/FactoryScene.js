@@ -4,7 +4,7 @@ import {itemSVG,ecoPoseSVG,binBodySVG,binLidSVG,svgURL} from '../ui/art.js';
 import {factorySVG,citySVG,gearSVG} from '../ui/factoryArt.js';
 import {FactoryEnvironment} from '../entities/FactoryEnvironment.js';
 import {AudioManager,preloadAudio} from '../systems/AudioManager.js';
-import {dragPosition,findDropBin,renderResolution} from '../systems/mobile.js';
+import {dragPosition,findDropBin,renderResolution,gameViewport} from '../systems/mobile.js';
 
 const BIN_NAMES={paper:'PAPEL',plastic:'PLÁSTICO',glass:'VIDRO',metal:'METAL',reject:'REJEITO'};
 const COLORS={paper:0x428ac9,plastic:0xd96557,glass:0x4e9d73,metal:0xd6a73f,reject:0x84918b};
@@ -41,9 +41,12 @@ export class FactoryScene extends Phaser.Scene {
     });
     this.input.on('drag',(p,obj,x,y)=>{
       if(this.mode==='play'&&!this.session.paused&&this.dragged===obj&&this.dragPointer===p.id){
-        const pos=dragPosition(p,x,y,this.scale.displayScale.x?1/this.scale.displayScale.x:1);
+        const camera=this.cameras.main;
+        const pos=dragPosition(p,x,y,camera.zoom/this.scale.displayScale.x,
+          {left:camera.worldView.x,right:camera.worldView.right,top:camera.worldView.y,bottom:camera.worldView.bottom});
         obj.setPosition(pos.x,pos.y);
-        const bin=findDropBin(this.binZones,p.x,p.y);
+        const point=this.cameras.main.getWorldPoint(p.x,p.y);
+        const bin=findDropBin(this.binZones,point.x,point.y);
         this.binZones.forEach(b=>b.hover.setVisible(b===bin));
       }
     });
@@ -52,7 +55,8 @@ export class FactoryScene extends Phaser.Scene {
       this.dragged=null;this.dragPointer=null;this.binZones.forEach(b=>b.hover.setVisible(false));
       obj.setScale(1);obj.dragging=false;obj.setDepth(5);
       if(this.mode!=='play'||this.session.paused||!this.activeItems.includes(obj))return;
-      const bin=findDropBin(this.binZones,p.x,p.y);
+      const point=this.cameras.main.getWorldPoint(p.x,p.y);
+      const bin=findDropBin(this.binZones,point.x,point.y);
       if(bin)this.classify(bin.category,obj);
       else {obj.x=obj.beltX;obj.y=350;}
     });
@@ -73,6 +77,14 @@ export class FactoryScene extends Phaser.Scene {
     this.environment=new FactoryEnvironment(this);
     this.binLayer=this.add.container(0,0).setDepth(3);
     this.marker=this.add.graphics().setDepth(11);
+  }
+
+  layoutViewport(width,height,compact){
+    const layout=gameViewport(width,height,compact);
+    this.cameras.main.setViewport(0,0,layout.width,layout.height)
+      .setZoom(layout.zoom).centerOn(layout.centerX,layout.centerY);
+    this.cameras.main.setBackgroundColor(compact?'#89a98c':'#102f35');
+    return layout;
   }
 
   showMenu(){
@@ -197,7 +209,7 @@ export class FactoryScene extends Phaser.Scene {
     if(this.mode!=='play'||this.session.paused||!obj||!this.activeItems.includes(obj))return;
     const r=this.session.resolve(obj.uid,obj.item,category,this.session.elapsed-obj.born,!!obj.prepared);
     if(r.reason==='ignored')return;
-    const text=r.ok?`Boa! +${r.points} pontos${this.session.streak>=3?' · sequência 2×':''}`:(obj.item.needsPrep&&!obj.prepared?'Retire os restos com E antes de separar. ':'')+obj.item.tip;
+    const text=r.ok?`Boa! +${r.points} pontos${this.session.streak>=3?' · sequência 2×':''}`:(obj.item.needsPrep&&!obj.prepared?'Retire os restos antes de separar. ':'')+obj.item.tip;
     this.audio.playEffect(r.ok?'correct':'wrong');
     if(r.ok&&this.session.streak===3)this.audio.playEffect('combo3');
     if(r.ok&&this.session.streak%5===0)this.audio.playEffect('combo5');

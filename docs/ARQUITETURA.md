@@ -60,3 +60,7 @@ main.js mantém estados menu, help, map, play, result, result-intro, arcade, arc
 ## Adaptação 3.2
 
 src/systems/mobile.js centraliza a geometria de arrasto/descarte, a indicação de orientação e o limite de resolução. A cena continua usando o mesmo resolve de campanha/arcade. src/main.js coordena a pausa idempotente por foco/visibilidade/orientação, os modais com foco contido e os botões de reinício seletivo e repetição de tutorial. CSS usa o viewport nas telas menores, preservando FIT e a área lógica da fábrica; Scale Manager faz sozinho a centralização. Reset da campanha preserva settings no formato legado e não toca a chave do arcade. Detalhes, decisões e limitações estão em MOBILE_3_2.md.
+
+## Paisagem 3.3
+
+main.syncViewport reserva HUD/canvas/ações, considera visualViewport e mantém uma única instância de cena e sessão. Scene.layoutViewport aplica gameViewport com zoom uniforme; o Scale Manager recebe o tamanho disponível somente em paisagem curta. O espaço interativo do mundo permanece inalterado. A conversão camera.getWorldPoint mantém o destino correto após zoom. O mesmo elemento coach é movido para a grade da barra inferior durante o modo compacto e restaurado ao retornar, sem duplicação de IDs ou listeners. MOBILE_3_3.md contém as decisões e medições atuais, substituindo o enquadramento mobile da seção 3.2.

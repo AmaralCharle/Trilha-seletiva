@@ -1,6 +1,6 @@
 # Trilha Seletiva
 
-Versão 3.2.0. Jogo educacional 2D no navegador com cinco fases de campanha, tutorial, revisão personalizada e Desafio Infinito. A identidade cartoon industrial da versão 2 foi preservada. A campanha pratica a separação dos materiais; o arcade oferece ondas e recordes locais sem alterar a progressão acadêmica.
+Versão 3.3.0. Jogo educacional 2D no navegador com cinco fases de campanha, tutorial, revisão personalizada e Desafio Infinito. A identidade cartoon industrial da versão 2 foi preservada. A campanha pratica a separação dos materiais; o arcade oferece ondas e recordes locais sem alterar a progressão acadêmica.
 
 ## Executar
 
@@ -68,7 +68,7 @@ Tecnologias: Phaser3.90.0, Vite6.4.6, Vitest4.1.12 e JavaScript ES Modules. Repo
 
 ## Verificação e entrega acadêmica
 
-Os testes e limites reais estão em docs/TESTES.md. Foram aprovados 67 testes em 9 arquivos nesta rodada; não equivalem a validação de aprendizagem com pessoas. A versão 3.2 está descrita em docs/MOBILE_3_2.md; o encerramento 3.1 está em docs/VERSAO_3_1.md. O GDD da campanha e da evolução até 3.1 está em docs/GDD.md e docs/GDD.pdf; o suplemento mobile 3.2 é docs/MOBILE_3_2.md.
+Os testes e limites reais estão em docs/TESTES.md. Foram aprovados 70 testes em 9 arquivos nesta rodada; não equivalem a validação de aprendizagem com pessoas. A correção de paisagem 3.3 está em docs/MOBILE_3_3.md; a primeira adaptação 3.2 está em docs/MOBILE_3_2.md; o encerramento 3.1 está em docs/VERSAO_3_1.md. O GDD da campanha e da evolução até 3.1 está em docs/GDD.md e docs/GDD.pdf; o suplemento mobile 3.2 é docs/MOBILE_3_2.md.
 
 Continuam pendentes integrantes/matrículas, teste com pessoa externa e vídeo acadêmico público de 1–3min. Não foi feita medição sustentada de FPS, validação de toque em aparelho físico ou certificação de acessibilidade. A campanha e o arcade continuam sujeitos a balanceamento com jogadores reais.
 
@@ -93,3 +93,7 @@ Remove-Item Env:GITHUB_PAGES
 ```
 
 O endereço pode ser compartilhado pelo WhatsApp; não requer aplicativo nativo. Atualizações são publicadas apenas se os testes e o build passarem.
+
+## Paisagem 3.3
+
+Em celulares horizontais com pouca altura, HUD, canvas e ações têm espaços próprios. A câmera enquadra a área jogável em toda a largura possível, mantendo as proporções e as regras. A fala do Eco acompanha o nome do item na barra inferior. Som e tela cheia ficam disponíveis na pausa. Ao voltar para uma tela maior, o enquadramento desktop é restaurado sem reiniciar a sessão. Evidências e limitações: [MOBILE_3_3.md](docs/MOBILE_3_3.md).

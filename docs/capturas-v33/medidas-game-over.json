@@ -1,0 +1,32 @@
+[
+  {
+    "allActionsInside": true,
+    "height": 360,
+    "horizontalOverflow": false,
+    "width": 800
+  },
+  {
+    "allActionsInside": true,
+    "height": 390,
+    "horizontalOverflow": false,
+    "width": 844
+  },
+  {
+    "allActionsInside": true,
+    "height": 412,
+    "horizontalOverflow": false,
+    "width": 915
+  },
+  {
+    "allActionsInside": true,
+    "height": 440,
+    "horizontalOverflow": false,
+    "width": 960
+  },
+  {
+    "allActionsInside": true,
+    "height": 720,
+    "horizontalOverflow": false,
+    "width": 1280
+  }
+]
