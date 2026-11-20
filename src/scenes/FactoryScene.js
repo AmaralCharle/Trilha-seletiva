@@ -237,6 +237,7 @@ export class FactoryScene extends Phaser.Scene {
       }
       o.shadow.setScale(o.dragging?.82:1);o.shadow.alpha=o.dragging?.25:.14;
       if(o.beltX>1195){
+        if(this.dragged===o)this.cancelDrag();
         this.session.miss(o.uid,o.item);this.activeItems=this.activeItems.filter(x=>x!==o);
         if(this.selected===o)this.selected=this.activeItems[0];o.destroy();
         this.audio.playEffect('wrong');this.onFeedback(false,'Item perdido. Escolha o próximo com calma.');
