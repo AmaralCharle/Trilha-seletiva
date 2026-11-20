@@ -10,7 +10,18 @@ vi.mock('phaser', () => ({
           getScene: () => ({
             ready: false,
             showMenu() {},
-            audio: { unlock() {}, stopMusic() {}, resume() {} },
+            start() {},
+            cancelDrag() {},
+            tweens: { pauseAll() {}, resumeAll() {} },
+            audio: {
+              unlock() {},
+              stopMusic() {},
+              resume() {},
+              setSettings() {},
+              setIntensity() {},
+              playMusic() {},
+              pause() {},
+            },
           }),
         };
         this.scale = {
@@ -29,6 +40,7 @@ const campaignKey = 'trilha-seletiva-v1';
 let memory;
 let setItem;
 let ui;
+let modal;
 
 function clickAction(action) {
   ui.listeners.click({
@@ -44,6 +56,7 @@ function clickAction(action) {
 describe('help screen navigation', () => {
   beforeEach(() => {
     memory = new Map();
+    modal = null;
     vi.resetModules();
     setItem = vi.fn((key, value) => memory.set(key, value));
     vi.stubGlobal('localStorage', {
@@ -56,6 +69,7 @@ describe('help screen navigation', () => {
       innerHTML: '',
       listeners: {},
       addEventListener(type, listener) { this.listeners[type] = listener; },
+      append(element) { modal = element; },
       querySelector() { return null; },
     };
     const gameElement = { getBoundingClientRect: () => ({ width: 1280, height: 720 }) };
@@ -65,7 +79,14 @@ describe('help screen navigation', () => {
         if (selector === '#ui') return ui;
         if (selector === '#game') return gameElement;
         if (selector === '#rotate-notice') return rotateNotice;
+        if (selector === '#modal') return modal;
         return null;
+      },
+      createElement() {
+        return {
+          querySelector() { return { focus() {} }; },
+          remove() { modal = null; },
+        };
       },
       addEventListener() {},
       body: { classList: { toggle() {} } },
@@ -75,7 +96,8 @@ describe('help screen navigation', () => {
     vi.stubGlobal('window', {
       innerWidth: 1280,
       innerHeight: 720,
-      addEventListener() {},
+      listeners: {},
+      addEventListener(type, listener) { this.listeners[type] = listener; },
     });
   });
 
@@ -145,5 +167,19 @@ describe('help screen navigation', () => {
     clickAction('mapBack');
 
     expect(ui.dataset.screen).toBe('menu');
+  });
+
+  it('keeps help as map return after abandoning the tutorial from pause', async () => {
+    await import('../src/main.js');
+    clickAction('play');
+    clickAction('tutorial');
+    clickAction('resume');
+    window.listeners.keydown({ key: 'Escape', preventDefault() {} });
+    clickAction('abandon');
+
+    expect(ui.dataset.screen).toBe('map');
+    clickAction('mapBack');
+
+    expect(ui.dataset.screen).toBe('help');
   });
 });
