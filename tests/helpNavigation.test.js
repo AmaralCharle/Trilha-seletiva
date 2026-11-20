@@ -170,16 +170,39 @@ describe('help screen navigation', () => {
   });
 
   it('keeps help as map return after abandoning the tutorial from pause', async () => {
+    const campaignSave = JSON.stringify({
+      version: 1,
+      unlocked: 1,
+      stars: {},
+      history: [],
+      settings: { sound: true, volume: 0.35 },
+    });
+    memory.set(campaignKey, campaignSave);
+
     await import('../src/main.js');
     clickAction('play');
+
+    expect(ui.dataset.screen).toBe('help');
+    expect(ui.innerHTML).toContain('data-action="tutorial">Treinar com o Eco</button>');
+
     clickAction('tutorial');
+    expect(ui.dataset.screen).toBe('play');
     clickAction('resume');
     window.listeners.keydown({ key: 'Escape', preventDefault() {} });
+    expect(modal.innerHTML).toContain('data-action="abandon">Voltar à trilha</button>');
+
     clickAction('abandon');
 
     expect(ui.dataset.screen).toBe('map');
+    expect(ui.innerHTML).toContain('data-action="mapBack">Voltar</button>');
     clickAction('mapBack');
 
     expect(ui.dataset.screen).toBe('help');
+    expect(memory.get(campaignKey)).toBe(campaignSave);
+    expect(setItem).not.toHaveBeenCalled();
+    expect(JSON.parse(memory.get(campaignKey))).toMatchObject({
+      history: [],
+      stars: {},
+    });
   });
 });
