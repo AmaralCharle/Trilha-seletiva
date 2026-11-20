@@ -121,6 +121,7 @@ describe('screen navigation', () => {
     clickAction('play');
 
     expect(ui.dataset.screen).toBe('help');
+    expect(ui.innerHTML).not.toContain('class="help-guide"');
     expect(ui.innerHTML).toContain('data-action="menu">Voltar</button>');
 
     clickAction('menu');
@@ -133,7 +134,7 @@ describe('screen navigation', () => {
 
   it('renders the complete visual waste guide below the existing help controls', async () => {
     await import('../src/main.js');
-    clickAction('play');
+    clickAction('help');
 
     expect(ui.dataset.screen).toBe('help');
     expect(ui.innerHTML).toContain('<b>Olhe, escolha e separe.</b>');
@@ -170,6 +171,14 @@ describe('screen navigation', () => {
       const groupHTML = groups[index][0];
       expect(groupHTML).toContain(BINS[category].symbol);
     }
+
+    clickAction('map');
+    expect(ui.dataset.screen).toBe('map');
+    clickAction('mapBack');
+    expect(ui.dataset.screen).toBe('help');
+    expect(ui.innerHTML).toContain('class="help-guide"');
+    clickAction('menu');
+    expect(ui.dataset.screen).toBe('menu');
   });
 
   it('returns from map to help, then from help to menu', async () => {
@@ -177,6 +186,7 @@ describe('screen navigation', () => {
     clickAction('play');
 
     expect(ui.dataset.screen).toBe('help');
+    expect(ui.innerHTML).not.toContain('class="help-guide"');
     expect(ui.innerHTML).toContain('data-action="map">Ver minha trilha</button>');
 
     clickAction('map');
@@ -187,6 +197,7 @@ describe('screen navigation', () => {
     clickAction('mapBack');
 
     expect(ui.dataset.screen).toBe('help');
+    expect(ui.innerHTML).not.toContain('class="help-guide"');
     expect(ui.innerHTML).toContain('data-action="menu">Voltar</button>');
 
     clickAction('menu');
