@@ -107,9 +107,13 @@ describe('help screen navigation', () => {
     expect(setItem).not.toHaveBeenCalled();
   });
 
-  it('returns from the map to help only when the map was opened from help', async () => {
+  it('returns from map to help, then from help to menu', async () => {
     await import('../src/main.js');
     clickAction('play');
+
+    expect(ui.dataset.screen).toBe('help');
+    expect(ui.innerHTML).toContain('data-action="map">Ver minha trilha</button>');
+
     clickAction('map');
 
     expect(ui.dataset.screen).toBe('map');
@@ -121,7 +125,23 @@ describe('help screen navigation', () => {
     expect(ui.innerHTML).toContain('data-action="menu">Voltar</button>');
 
     clickAction('menu');
+
+    expect(ui.dataset.screen).toBe('menu');
+  });
+
+  it('returns directly from map to menu when opened from menu', async () => {
+    await import('../src/main.js');
+    clickAction('play');
+    clickAction('menu');
+
+    expect(ui.dataset.screen).toBe('menu');
+    expect(ui.innerHTML).toContain('data-action="map">Minha trilha</button>');
+
     clickAction('map');
+
+    expect(ui.dataset.screen).toBe('map');
+    expect(ui.innerHTML).toContain('data-action="mapBack">Voltar</button>');
+
     clickAction('mapBack');
 
     expect(ui.dataset.screen).toBe('menu');
