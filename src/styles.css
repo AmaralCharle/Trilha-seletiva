@@ -142,3 +142,24 @@ body.compact-play #ui .bottom-controls>button[data-action=hint]{grid-column:3}
 
 
 body.compact-play #ui .coach.error p{color:#8b4536}
+
+.nickname-label input[aria-invalid=true]{border-color:#b24f41;box-shadow:0 0 0 2px #b24f4122}
+.nickname-error{flex:0 0 100%;min-width:0;margin-top:-8px;color:#a23f34;font-size:12px;font-weight:bold;line-height:1.35;overflow-wrap:anywhere}
+.nickname-error[hidden]{display:none}
+@media(max-height:540px) and (min-aspect-ratio:7/5){
+ #ui .arcade-intro{top:3%;width:94%;max-height:94%;padding:6px 18px}
+ #ui .arcade-intro .arcade-badge{margin-bottom:3px}
+ #ui .arcade-intro h2{font-size:26px;margin:2px 0}
+ #ui .arcade-intro .arcade-tagline{margin:2px 0 6px!important}
+ #ui .arcade-intro-grid{gap:12px}
+ #ui .arcade-intro-grid p{font-size:11px;line-height:1.35;margin:4px 0}
+ #ui .arcade-rules{font-size:10px;line-height:1.4;margin:4px 0;padding-left:16px}
+ #ui .arcade-record{padding:8px;gap:4px}
+ #ui .arcade-record strong{font-size:26px}
+ #ui .nickname-label{gap:8px;padding:4px 0;margin:4px 0 6px;font-size:12px}
+ #ui .nickname-label input{width:160px;padding:6px 8px}
+ #ui .nickname-label small{font-size:9px}
+ #ui .nickname-error{font-size:10px;line-height:1.2}
+ #ui .arcade-intro .actions{gap:8px;margin-top:6px}
+ #ui .arcade-intro .actions button{min-height:36px;padding:8px 10px;font-size:11px}
+}

@@ -7,7 +7,7 @@ import {loadProgress,saveAttempt,saveSettings,resetProgress,exportCSV} from './s
 import {ecoPoseSVG,svgURL} from './ui/art.js';
 import {ResultFlow} from './systems/ResultFlow.js';
 import {InfiniteSession} from './systems/infiniteSession.js';
-import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname} from './systems/leaderboard.js';
+import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname,isNicknameTaken} from './systems/leaderboard.js';
 import {hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML} from './ui/arcade.js';
 import {needsLandscape,isCompactLandscape} from './systems/mobile.js';
 import './styles.css';
@@ -16,6 +16,7 @@ const game=new Phaser.Game({type:Phaser.AUTO,parent:'game',width:1280,height:720
 const scene=()=>game.scene.getScene('Factory');
 const resultFlow=new ResultFlow();let completedRanking=null;
 const names={paper:'Papel',plastic:'Plástico',glass:'Vidro',metal:'Metal',reject:'Rejeito'};
+const nicknameTakenMessage='Este apelido já está no ranking. Escolha outro nome.';
 const eco=(pose='idle')=>`<img class="eco" data-pose="${pose}" src="${svgURL(ecoPoseSVG(pose))}" alt="Eco, robô instrutor">`;
 const starPath='M32 4 40.3 21 59 23.7 45.5 36.9 48.7 55.5 32 46.7 15.3 55.5 18.5 36.9 5 23.7 23.7 21Z';
 const stars=(count,large=false)=>`<span class="stars${large?' large':''}" role="img" aria-label="${count} de 3 estrelas">${[0,1,2].map(i=>`<svg viewBox="0 0 64 64" aria-hidden="true" class="star ${i<count?'earned':'empty'}" style="--star-index:${i}"><path class="star-edge" d="${starPath}"/><path class="star-face" d="${starPath}"/><path class="star-shine" d="M31 12 35 23 24 24Z"/></svg>`).join('')}</span>`;
@@ -83,9 +84,26 @@ function credits(){screen='credits';idleScene();render(`<section class="panel"><
 function dialog(title,text,actions){document.querySelector('#modal')?.remove();const el=document.createElement('div');el.id='modal';el.className='modal';el.innerHTML=`<section class="panel" role="dialog" aria-modal="true" aria-label="${title}"><h2>${title}</h2><p>${text}</p><div class="actions">${actions.map(([t,a])=>button(t,a,a==='resume'?'primary':'')).join('')}</div></section>`;ui.append(el);el.querySelector('button').focus();}
 function pause(){if(screen!=='play'||session.paused)return;scene().cancelDrag();session.paused=true;scene().audio?.pause();scene().tweens.pauseAll();dialog('Uma pausa para respirar','A esteira e o relógio estão parados. Sua missão espera por você.',[['Continuar','resume'],[session.infinite?'Reiniciar desafio':'Reiniciar fase','restart'],[session.infinite?'Voltar ao menu':'Voltar à trilha','abandon'],[progress.settings.sound?'Desligar sons':'Ligar sons','pauseSound'],...(document.fullscreenEnabled?[[document.fullscreenElement?'Sair da tela cheia':'Tela cheia','fullscreen']]:[])]);}
 function resume(){if(needsLandscape(window.innerWidth,window.innerHeight)){toast('Gire o aparelho para continuar a missão.');return;}document.querySelector('#modal')?.remove();if(session){session.paused=false;scene().tweens.resumeAll();scene().audio?.resume();}}
-function infiniteIntro(){screen='arcade';session=null;idleScene();const rank=loadLeaderboard();render(arcadeIntroHTML(rank.entries,nickname));if(rank.notice)toast(rank.notice);}
+function validateNickname(input=document.querySelector('#nickname')){
+ if(!input)return !isNicknameTaken(nickname);
+ const taken=isNicknameTaken(input.value);
+ const message=document.querySelector('#nickname-error');
+ if(message){message.textContent=taken?nicknameTakenMessage:'';message.hidden=!taken;}
+ input.setAttribute('aria-invalid',String(taken));
+ const begin=document.querySelector('[data-action="beginInfinite"]');
+ if(begin)begin.disabled=taken;
+ return !taken;
+}
+function infiniteIntro(){screen='arcade';session=null;idleScene();const rank=loadLeaderboard();render(arcadeIntroHTML(rank.entries,nickname));validateNickname();if(rank.notice)toast(rank.notice);}
 function startInfinite(){
- resultFlow.cancel();const input=document.querySelector('#nickname');if(input)nickname=normalizeNickname(input.value);
+ const input=document.querySelector('#nickname');
+ const chosenNickname=normalizeNickname(input?.value??nickname);
+ if(isNicknameTaken(chosenNickname)){
+  if(input){validateNickname(input);input.focus();}
+  else infiniteIntro();
+  return;
+ }
+ resultFlow.cancel();nickname=chosenNickname;
  progress=loadProgress();bestBefore=loadLeaderboard().entries[0]?.score??0;recordShown=false;seenWave=1;
  session=new InfiniteSession(CATALOG);currentLevel=null;review=false;screen='play';
  render(`<section class="hud infinite-hud"><div><small>DESAFIO INFINITO</small><h2 id="wave">Onda 1 · Iniciante</h2></div><div class="hud-stats"><div><small>PONTOS</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="streak">0</strong></div><div><small>RESOLVIDOS</small><strong id="count">0</strong></div><div><small>VIDAS</small><span id="lives" data-value="3">${hearts(3)}</span></div>${button('Pausar','pause')}</div></section><div class="mission"><span id="wave-goal">10 ITENS PARA A PRÓXIMA ONDA</span><div><i id="progress-bar"></i></div></div><div id="wave-banner" role="status" aria-live="polite"></div><div class="coach">${eco('guide')}<div><b>ECO · CENTRAL DE TRIAGEM</b><p id="feedback">Três vidas, cinco destinos. Vamos construir sua melhor sequência!</p></div></div><div class="bottom-controls"><strong id="selected-item" aria-live="polite">Toque em um resíduo</strong><span><kbd>1–5</kbd> separar · <kbd>Tab</kbd> selecionar · <kbd>Esc</kbd> pausar</span>${button('Retirar restos','prepare','small')}${button('Repetir dica','hint','small')}</div>`);
@@ -115,7 +133,7 @@ const actions={
  confirmReset:()=>{resultFlow.cancel();session=null;progress=resetProgress();scene().audio?.setSettings(progress.settings);map();toast('Trilha reiniciada! Sua jornada começa na primeira fase.');}
 };
 ui.addEventListener('click',e=>{scene().audio?.unlock();const a=e.target.closest('[data-action]');if(a){e.preventDefault();actions[a.dataset.action]?.();}const l=e.target.closest('[data-level]');if(l&&!l.disabled)start(Number(l.dataset.level));});
-ui.addEventListener('input',e=>{const keys={'music-volume':'musicVolume','effects-volume':'effectsVolume'},key=keys[e.target.id];if(key){progress=saveSettings({...progress.settings,[key]:Number(e.target.value)});scene().audio?.setSettings(progress.settings);document.querySelector(key==='musicVolume'?'#music-value':'#effects-value').textContent=Math.round(Number(e.target.value)*100)+'%';}});
+ui.addEventListener('input',e=>{if(e.target.id==='nickname'){validateNickname(e.target);return;}const keys={'music-volume':'musicVolume','effects-volume':'effectsVolume'},key=keys[e.target.id];if(key){progress=saveSettings({...progress.settings,[key]:Number(e.target.value)});scene().audio?.setSettings(progress.settings);document.querySelector(key==='musicVolume'?'#music-value':'#effects-value').textContent=Math.round(Number(e.target.value)*100)+'%';}});
 window.addEventListener('keydown',e=>{const modal=document.querySelector('#modal');if(modal&&e.key==='Tab'){const controls=[...modal.querySelectorAll('button,input,a')];const first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}return;}if(screen==='result-intro'&&['Escape','Enter',' '].includes(e.key)){e.preventDefault();resultFlow.skip();return;}if(e.key==='Escape'&&document.querySelector('#modal')&&screen!=='play'){actions.cancelReset();return;}if(e.key==='Escape'&&screen==='play'){session.paused?resume():pause();}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});
 window.addEventListener('blur',()=>pause());
