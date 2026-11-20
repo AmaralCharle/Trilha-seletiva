@@ -1,0 +1,109 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('phaser', () => ({
+  default: {
+    AUTO: 'AUTO',
+    Scale: { FIT: 'FIT', CENTER_BOTH: 'CENTER_BOTH' },
+    Game: class {
+      constructor() {
+        this.scene = {
+          getScene: () => ({
+            ready: false,
+            showMenu() {},
+            audio: { unlock() {}, stopMusic() {}, resume() {} },
+          }),
+        };
+        this.scale = {
+          gameSize: { width: 1280, height: 720 },
+          setGameSize(width, height) { this.gameSize = { width, height }; },
+          refresh() {},
+        };
+      }
+    },
+  },
+}));
+
+vi.mock('../src/scenes/FactoryScene.js', () => ({ FactoryScene: class {} }));
+
+const campaignKey = 'trilha-seletiva-v1';
+let memory;
+let setItem;
+let ui;
+
+function clickAction(action) {
+  ui.listeners.click({
+    target: {
+      closest(selector) {
+        return selector === '[data-action]' ? { dataset: { action } } : null;
+      },
+    },
+    preventDefault() {},
+  });
+}
+
+describe('help screen navigation', () => {
+  beforeEach(() => {
+    memory = new Map();
+    vi.resetModules();
+    setItem = vi.fn((key, value) => memory.set(key, value));
+    vi.stubGlobal('localStorage', {
+      getItem: key => memory.get(key) ?? null,
+      setItem,
+    });
+
+    ui = {
+      dataset: {},
+      innerHTML: '',
+      listeners: {},
+      addEventListener(type, listener) { this.listeners[type] = listener; },
+      querySelector() { return null; },
+    };
+    const gameElement = { getBoundingClientRect: () => ({ width: 1280, height: 720 }) };
+    const rotateNotice = { hidden: true };
+    vi.stubGlobal('document', {
+      querySelector(selector) {
+        if (selector === '#ui') return ui;
+        if (selector === '#game') return gameElement;
+        if (selector === '#rotate-notice') return rotateNotice;
+        return null;
+      },
+      addEventListener() {},
+      body: { classList: { toggle() {} } },
+      documentElement: { style: { setProperty() {} } },
+      fullscreenEnabled: false,
+    });
+    vi.stubGlobal('window', {
+      innerWidth: 1280,
+      innerHeight: 720,
+      addEventListener() {},
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('renders Voltar and returns to menu without changing campaign progress', async () => {
+    const campaignSave = JSON.stringify({
+      version: 1,
+      unlocked: 1,
+      stars: {},
+      history: [],
+      settings: { sound: true, volume: 0.35 },
+    });
+    memory.set(campaignKey, campaignSave);
+
+    await import('../src/main.js');
+    clickAction('play');
+
+    expect(ui.dataset.screen).toBe('help');
+    expect(ui.innerHTML).toContain('data-action="menu">Voltar</button>');
+
+    clickAction('menu');
+
+    expect(ui.dataset.screen).toBe('menu');
+    expect(ui.innerHTML).toContain('Jogar campanha');
+    expect(memory.get(campaignKey)).toBe(campaignSave);
+    expect(setItem).not.toHaveBeenCalled();
+  });
+});
