@@ -106,4 +106,24 @@ describe('help screen navigation', () => {
     expect(memory.get(campaignKey)).toBe(campaignSave);
     expect(setItem).not.toHaveBeenCalled();
   });
+
+  it('returns from the map to help only when the map was opened from help', async () => {
+    await import('../src/main.js');
+    clickAction('play');
+    clickAction('map');
+
+    expect(ui.dataset.screen).toBe('map');
+    expect(ui.innerHTML).toContain('data-action="mapBack">Voltar</button>');
+
+    clickAction('mapBack');
+
+    expect(ui.dataset.screen).toBe('help');
+    expect(ui.innerHTML).toContain('data-action="menu">Voltar</button>');
+
+    clickAction('menu');
+    clickAction('map');
+    clickAction('mapBack');
+
+    expect(ui.dataset.screen).toBe('menu');
+  });
 });
