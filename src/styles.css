@@ -163,3 +163,17 @@ body.compact-play #ui .coach.error p{color:#8b4536}
  #ui .arcade-intro .actions{gap:8px;margin-top:6px}
  #ui .arcade-intro .actions button{min-height:36px;padding:8px 10px;font-size:11px}
 }
+.help-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
+.help-actions button{width:100%;min-width:0;white-space:normal;text-align:center}
+@media(max-width:1100px),(pointer:coarse){#ui .help-actions{gap:8px}#ui .help-actions button{padding:9px 6px}}
+@media(max-width:380px){#ui .help-actions{grid-template-columns:repeat(2,minmax(0,1fr))}#ui .help-actions button:last-child{grid-column:1/-1}}
+@media(max-width:1100px) and (orientation:landscape){
+ #ui .help-panel{padding:10px 18px}
+ #ui .help-panel h2{font-size:21px;margin:2px 0 6px}
+ #ui .help-panel .instruction{gap:10px}
+ #ui .help-panel .instruction>.eco{width:50px;height:50px}
+ #ui .help-panel .instruction p{font-size:12px;line-height:1.35;margin:5px 0}
+ #ui .help-panel .note{font-size:10px!important;line-height:1.3;margin:4px 0 6px}
+ #ui .help-panel .help-actions{gap:8px;margin-top:4px}
+ #ui .help-panel .help-actions button{min-height:40px;padding:7px 8px;font-size:12px}
+}
