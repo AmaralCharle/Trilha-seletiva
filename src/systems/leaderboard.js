@@ -12,6 +12,12 @@ export function normalizeNickname(value) {
   return [...text].slice(0, 15).join('') || 'Jogador';
 }
 
+export function isNicknameTaken(nickname, entries = loadLeaderboard()) {
+  const rankingEntries = Array.isArray(entries) ? entries : entries.entries;
+  const normalized = normalizeNickname(nickname).toLowerCase();
+  return rankingEntries.some(entry => normalizeNickname(entry.nickname).toLowerCase() === normalized);
+}
+
 function validEntry(value) {
   return value && typeof value.id === 'string' && value.id.length <= 100 &&
     typeof value.nickname === 'string' && value.nickname === normalizeNickname(value.nickname) &&
@@ -71,11 +77,15 @@ function entryFromResult(result, nickname) {
 export function saveInfiniteResult(result, nickname) {
   const current = loadLeaderboard();
   const entry = entryFromResult(result, nickname);
-  if (!entry) return { ...current, position: null, newRecord: false };
+  if (!entry) return { ...current, position: null, newRecord: false, status: 'invalid-result', saved: false };
+  if (isNicknameTaken(entry.nickname, current.entries)) {
+    return { ...current, position: null, newRecord: false, status: 'nickname-taken', saved: false };
+  }
   const newRecord = entry.score > (current.entries[0]?.score ?? 0);
   const saved = persist([...current.entries, entry]);
   const index = saved.entries.findIndex(item => item.id === entry.id);
-  return { ...saved, position: index < 0 ? null : index + 1, newRecord };
+  const position = index < 0 ? null : index + 1;
+  return { ...saved, position, newRecord, status: position === null ? 'not-ranked' : 'saved', saved: position !== null };
 }
 
 /** This never touches the campaign save or audio preferences. */
