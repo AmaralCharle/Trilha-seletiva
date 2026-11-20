@@ -245,6 +245,7 @@ describe('screen navigation', () => {
     await import('../src/main.js');
     clickAction('menu');
     if (origin === 'map') clickAction('map');
+    expect(ui.dataset.screen).toBe(origin);
     clickAction('review');
 
     expect(ui.dataset.screen).toBe('play');
