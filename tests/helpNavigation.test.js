@@ -53,7 +53,7 @@ function clickAction(action) {
   });
 }
 
-describe('help screen navigation', () => {
+describe('screen navigation', () => {
   beforeEach(() => {
     memory = new Map();
     modal = null;
@@ -226,6 +226,36 @@ describe('help screen navigation', () => {
     expect(ui.innerHTML).toContain('data-action="beginInfinite"');
     expect(ui.innerHTML).toContain('Começar desafio');
     expect(memory.get(rankingKey)).toBe(rankingSave);
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['menu', 'menu'],
+    ['map', 'map'],
+  ])('abandons paused review without saving and returns to its origin (%s)', async (origin, expectedScreen) => {
+    const campaignSave = JSON.stringify({
+      version: 1,
+      unlocked: 1,
+      stars: {},
+      history: [],
+      settings: { sound: true, volume: 0.35 },
+    });
+    memory.set(campaignKey, campaignSave);
+
+    await import('../src/main.js');
+    clickAction('menu');
+    if (origin === 'map') clickAction('map');
+    clickAction('review');
+
+    expect(ui.dataset.screen).toBe('play');
+    window.listeners.keydown({ key: 'Escape', preventDefault() {} });
+    expect(modal.innerHTML).toContain('data-action="abandon">Voltar</button>');
+    expect(modal.innerHTML).not.toContain('Voltar à trilha');
+
+    clickAction('abandon');
+
+    expect(ui.dataset.screen).toBe(expectedScreen);
+    expect(memory.get(campaignKey)).toBe(campaignSave);
     expect(setItem).not.toHaveBeenCalled();
   });
 });
