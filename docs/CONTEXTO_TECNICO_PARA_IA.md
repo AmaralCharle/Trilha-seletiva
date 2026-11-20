@@ -97,14 +97,14 @@ O estado de navegação é controlado por `screen` em `src/main.js`; não há ro
 3. **Tutorial:** treinamento guiado de três itens; não grava tentativa de campanha nem altera estrelas. Se abandonado pela pausa, abre o mapa e preserva a origem `help` quando a jornada começou por “Jogar campanha”.
 4. **Mapa:** cinco fases, estrelas e bloqueio sequencial; inclui revisão, estatísticas e reset seletivo. O botão “Voltar” retorna à tela de origem: `help` quando acessado por “Ver minha trilha” nas instruções ou após abandonar pela pausa um treino/tutorial iniciado por “Jogar campanha”; `menu` nos demais acessos.
 5. **Partida de campanha:** fase escolhida, revisão ou tutorial, HUD, meta, Eco, feedback e controles.
-6. **Pausa:** congela sessão, cena, tween e áudio; permite continuar, reiniciar fase/desafio, abandonar, alternar áudio e, se disponível, fullscreen. Abandonar o treino/tutorial abre o mapa (`map`); se a jornada começou por “Jogar campanha”, a origem `help` é preservada para o botão “Voltar” do mapa.
+6. **Pausa:** congela sessão, cena, tween e áudio; permite continuar, reiniciar fase/desafio, abandonar, alternar áudio e, se disponível, fullscreen. Abandonar o treino/tutorial abre o mapa (`map`); se a jornada começou por “Jogar campanha”, a origem `help` é preservada para o botão “Voltar” do mapa. No Desafio Infinito, a saída da pausa se chama “Voltar” e retorna à introdução arcade sem salvar o abandono no ranking local.
 7. **Resultado da campanha:** aprovação, precisão, acertos, pontos, perdas, erros por categoria, dica educacional quando falha; repetir, próxima fase, mapa, menu ou conclusão.
 8. **Conclusão da jornada:** resumo de estatísticas com medalha.
 9. **Estatísticas:** tentativas, primeira/última precisão, estrelas, dificuldades mais erradas, comparação por fase/revisão, últimas tentativas e exportação CSV.
 10. **Configurações:** volume independente de música e efeitos, silêncio geral, amostra musical, repetir tutorial e reiniciar Trilha.
 11. **Créditos:** tecnologias, origem do conteúdo, arte/áudio e pendências da equipe.
-12. **Introdução arcade:** recorde, regras e apelido até 15 caracteres.
-13. **Partida arcade:** pontos, combo, resolvidos, vidas, onda, progresso até próxima onda e dicas.
+12. **Introdução arcade:** recorde, regras e apelido até 15 caracteres; é a tela para a qual “Voltar” retorna ao abandonar uma partida arcade pausada.
+13. **Partida arcade:** pontos, combo, resolvidos, vidas, onda, progresso até próxima onda e dicas. Durante a pausa, o botão de saída mudou de “Voltar ao menu” para “Voltar”; ele abandona a sessão atual e retorna à introdução arcade sem registrar o abandono no ranking local.
 14. **Introdução de derrota:** animação de desligamento por 1,75 s, opção de pular.
 15. **Game Over:** resultado persistente com tentar novamente, ranking e menu.
 16. **Ranking local:** top dez e confirmação antes de limpar.
