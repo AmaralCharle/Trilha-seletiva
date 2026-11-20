@@ -4,6 +4,7 @@ import {itemSVG,ecoPoseSVG,binBodySVG,binLidSVG,svgURL} from '../ui/art.js';
 import {factorySVG,citySVG,gearSVG} from '../ui/factoryArt.js';
 import {FactoryEnvironment} from '../entities/FactoryEnvironment.js';
 import {AudioManager,preloadAudio} from '../systems/AudioManager.js';
+import {dragPosition,findDropBin,renderResolution} from '../systems/mobile.js';
 
 const BIN_NAMES={paper:'PAPEL',plastic:'PLÁSTICO',glass:'VIDRO',metal:'METAL',reject:'REJEITO'};
 const COLORS={paper:0x428ac9,plastic:0xd96557,glass:0x4e9d73,metal:0xd6a73f,reject:0x84918b};
@@ -27,18 +28,31 @@ export class FactoryScene extends Phaser.Scene {
 
   create(){
     this.audio=new AudioManager(this,{onError:message=>window.dispatchEvent(new CustomEvent('audio-error',{detail:message}))});
+    this.textResolution=renderResolution(globalThis.devicePixelRatio);
     this.drawFactory();
+    this.input.setTopOnly(true);
+    this.input.dragDistanceThreshold=6;
+    this.input.on('gameout',()=>this.cancelDrag());
+    this.input.on('pointerdown',()=>this.audio.unlock());
     this.input.on('dragstart',(p,obj)=>{
-      if(this.mode!=='play'||this.session?.paused)return;
+      if(this.mode!=='play'||this.session?.paused||this.dragged)return;
+      this.dragged=obj;this.dragPointer=p.id;
       this.selected=obj;obj.dragging=true;obj.setScale(1.06);this.audio.playEffect('drag');obj.setDepth(12);
     });
     this.input.on('drag',(p,obj,x,y)=>{
-      if(this.mode==='play'&&!this.session.paused){obj.x=x;obj.y=y;}
+      if(this.mode==='play'&&!this.session.paused&&this.dragged===obj&&this.dragPointer===p.id){
+        const pos=dragPosition(p,x,y,this.scale.displayScale.x?1/this.scale.displayScale.x:1);
+        obj.setPosition(pos.x,pos.y);
+        const bin=findDropBin(this.binZones,p.x,p.y);
+        this.binZones.forEach(b=>b.hover.setVisible(b===bin));
+      }
     });
     this.input.on('dragend',(p,obj)=>{
+      if(this.dragged!==obj||this.dragPointer!==p.id)return;
+      this.dragged=null;this.dragPointer=null;this.binZones.forEach(b=>b.hover.setVisible(false));
       obj.setScale(1);obj.dragging=false;obj.setDepth(5);
       if(this.mode!=='play'||this.session.paused||!this.activeItems.includes(obj))return;
-      const bin=this.binZones.find(b=>Phaser.Geom.Rectangle.Contains(b.rect,obj.x,obj.y));
+      const bin=findDropBin(this.binZones,p.x,p.y);
       if(bin)this.classify(bin.category,obj);
       else {obj.x=obj.beltX;obj.y=350;}
     });
@@ -62,11 +76,13 @@ export class FactoryScene extends Phaser.Scene {
   }
 
   showMenu(){
+    this.cancelDrag();
     this.clearShutdown();this.tweens.resumeAll();this.mode='menu';this.clearItems();this.clearEffects();
     this.binLayer.removeAll(true);this.environment.showHero(true);this.marker.clear();
   }
 
   start(session,onUpdate,onFinish,onFeedback){
+    this.cancelDrag();
     this.clearShutdown();this.tweens.resumeAll();this.clearItems();this.clearEffects();this.mode='play';
     this.environment.showHero(false);this.session=session;
     this.onUpdate=onUpdate;this.onFinish=onFinish;this.onFeedback=onFeedback;
@@ -81,15 +97,22 @@ export class FactoryScene extends Phaser.Scene {
     const shadow=this.add.ellipse(x,675,160,22,0x355c43,.19);
     const body=this.add.image(x,y+48,`bin-${category}`).setDisplaySize(151,130);
     const lid=this.add.image(x,y-5,`lid-${category}`).setDisplaySize(166,28);
-    const label=this.add.text(x,y+63,BIN_NAMES[category],{fontFamily:'Arial',fontStyle:'bold',fontSize:'16px',color:'#214a45'}).setOrigin(.5);
-    const key=this.add.text(x-59,y+9,String(index+1),{fontFamily:'Arial',fontStyle:'bold',fontSize:'14px',color:'#fff8e8',backgroundColor:'#244f47',padding:{x:6,y:3}}).setOrigin(.5);
-    const zone=this.add.zone(x,y+47,168,139).setInteractive({useHandCursor:true});
+    const label=this.add.text(x,y+63,BIN_NAMES[category],{resolution:this.textResolution,fontFamily:'Arial',fontStyle:'bold',fontSize:'24px',color:'#214a45'}).setOrigin(.5);
+    const key=this.add.text(x-59,y+9,String(index+1),{resolution:this.textResolution,fontFamily:'Arial',fontStyle:'bold',fontSize:'14px',color:'#fff8e8',backgroundColor:'#244f47',padding:{x:6,y:3}}).setOrigin(.5);
+    const zone=this.add.zone(x,y+47,192,174).setInteractive({useHandCursor:true});
     const hover=this.add.graphics().lineStyle(3,0xffedaa,.9).strokeRoundedRect(x-84,y-23,168,151,17).setVisible(false);
     zone.on('pointerover',()=>{if(this.mode==='play'&&!this.session.paused)hover.setVisible(true);});
     zone.on('pointerout',()=>hover.setVisible(false));
-    zone.on('pointerdown',()=>this.classify(category));
+    zone.on('pointerdown',()=>{if(!this.dragged)this.classify(category);});
     this.binLayer.add([shadow,body,lid,label,key,hover,zone]);
-    this.binZones.push({category,rect:new Phaser.Geom.Rectangle(x-84,y-22,168,150),x,y,body,lid,hover});
+    this.binZones.push({category,rect:new Phaser.Geom.Rectangle(x-96,y-36,192,174),x,y,body,lid,hover});
+  }
+
+  cancelDrag(){
+    const obj=this.dragged;
+    if(obj?.active){obj.dragging=false;obj.setScale(1).setDepth(5).setPosition(obj.beltX,350);}
+    this.dragged=null;this.dragPointer=null;
+    this.binZones?.forEach(b=>b.hover.setVisible(false));
   }
 
   presentDefeat(onReady){
@@ -134,12 +157,12 @@ export class FactoryScene extends Phaser.Scene {
     o.add(plate);
     o.shadow=this.add.ellipse(0,19,68,12,0x54755a,.14);o.add(o.shadow);
     o.sprite=this.add.image(0,-14,item.id).setDisplaySize(87,87);o.add(o.sprite);
-    o.add(this.add.text(0,44,item.name,{fontFamily:'Arial',fontStyle:'bold',fontSize:'14px',color:'#284e47',align:'center',wordWrap:{width:116}}).setOrigin(.5));
+    o.add(this.add.text(0,44,item.name,{resolution:this.textResolution,fontFamily:'Arial',fontStyle:'bold',fontSize:'14px',color:'#284e47',align:'center',wordWrap:{width:116}}).setOrigin(.5));
     if(item.needsPrep){
-      o.badge=this.add.text(0,-68,'RESTOS',{fontFamily:'Arial',fontStyle:'bold',fontSize:'12px',backgroundColor:'#f3cb68',color:'#27483c',padding:{x:9,y:4}}).setOrigin(.5);o.add(o.badge);
+      o.badge=this.add.text(0,-68,'RESTOS',{resolution:this.textResolution,fontFamily:'Arial',fontStyle:'bold',fontSize:'12px',backgroundColor:'#f3cb68',color:'#27483c',padding:{x:9,y:4}}).setOrigin(.5);o.add(o.badge);
     }
-    o.setDepth(5);o.setSize(126,118).setInteractive({useHandCursor:true});this.input.setDraggable(o);
-    o.on('pointerdown',()=>{this.selected=o;this.audio.playEffect('select');});
+    o.setDepth(5);o.setSize(146,138).setInteractive({useHandCursor:true});this.input.setDraggable(o);
+    o.on('pointerdown',()=>{if(this.mode!=='play'||this.session.paused||this.dragged)return;this.selected=o;this.audio.playEffect('select');});
     o.uid=uid;o.item=item;o.born=this.session.elapsed;o.beltX=92;
     this.activeItems.push(o);if(!this.selected)this.selected=o;
   }
@@ -184,7 +207,7 @@ export class FactoryScene extends Phaser.Scene {
     this.activeItems=this.activeItems.filter(x=>x!==obj);this.selected=this.activeItems[0];
     this.transient(obj);
     this.tweens.add({targets:obj,x:bin.x,y:bin.y+18,scaleX:.1,scaleY:.1,alpha:0,duration:this.environment.reduced?80:270,ease:'Quad.in',onComplete:()=>this.destroyEffect(obj)});
-    const caption=this.transient(this.add.text(bin.x,bin.y-27,r.ok?`+${r.points}`:'REVISE',{fontFamily:'Arial',fontStyle:'bold',fontSize:r.ok?'25px':'16px',color:r.ok?'#2a7958':'#a64d36',stroke:'#fff4d8',strokeThickness:4}).setOrigin(.5).setDepth(11));
+    const caption=this.transient(this.add.text(bin.x,bin.y-27,r.ok?`+${r.points}`:'REVISE',{resolution:this.textResolution,fontFamily:'Arial',fontStyle:'bold',fontSize:r.ok?'25px':'16px',color:r.ok?'#2a7958':'#a64d36',stroke:'#fff4d8',strokeThickness:4}).setOrigin(.5).setDepth(11));
     this.tweens.add({targets:caption,y:bin.y-65,alpha:0,duration:750,onComplete:()=>this.destroyEffect(caption)});
     this.checkEnd();
   }

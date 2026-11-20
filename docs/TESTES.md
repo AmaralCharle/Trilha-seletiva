@@ -1,3 +1,7 @@
+# Verificações da versão 3.2
+
+67 testes em 9 arquivos aprovados; build Pages concluído. Reset seletivo, migração e fallback, hitboxes e geometria mobile possuem novos casos. Os testes de interface, dimensões, evidências e limites estão em [MOBILE_3_2.md](MOBILE_3_2.md). O relato abaixo é histórico da versão 3.1.
+
 # Verificações da versão 3.1
 
 Ambiente: Windows, Node.js25.0.0, npm11.6.2, Phaser3.90.0, Vite6.4.6, Vitest4.1.12. Navegador integrado baseado em Chromium. Data19/11/2026.

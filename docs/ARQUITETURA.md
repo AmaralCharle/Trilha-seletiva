@@ -56,3 +56,7 @@ leaderboard.js guarda dez entradas na chave trilha-seletiva-infinite-v1. A campa
 AudioManager usa preloadAudio e audioManifest. Loops de fase/revisão/arcade e vinhetas de resultado têm uma única voz musical. A troca encadeia fade-out, destruição e fade-in. ResultFlow marca sessões concluídas por WeakSet, salva em onStart e protege onResult de callbacks duplicados ou antigos. Sua animação usa FactoryScene.presentDefeat e um temporizador cancelável; main.defeatIntro apresenta texto e opção de pular. Reinício e navegação cancelam o fluxo anterior.
 
 main.js mantém estados menu, help, map, play, result, result-intro, arcade, arcade-result, leaderboard, stats e settings. FactoryScene usa menu, play, result e defeat. Entradas e física só atuam em play com sessão não pausada. Session e InfiniteSession determinam o único resultado final; a interface não cria uma segunda condição de vitória ou derrota.
+
+## Adaptação 3.2
+
+src/systems/mobile.js centraliza a geometria de arrasto/descarte, a indicação de orientação e o limite de resolução. A cena continua usando o mesmo resolve de campanha/arcade. src/main.js coordena a pausa idempotente por foco/visibilidade/orientação, os modais com foco contido e os botões de reinício seletivo e repetição de tutorial. CSS usa o viewport nas telas menores, preservando FIT e a área lógica da fábrica; Scale Manager faz sozinho a centralização. Reset da campanha preserva settings no formato legado e não toca a chave do arcade. Detalhes, decisões e limitações estão em MOBILE_3_2.md.

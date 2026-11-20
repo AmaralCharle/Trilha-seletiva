@@ -1,6 +1,6 @@
 # Trilha Seletiva
 
-Versão 3.1.0. Jogo educacional 2D no navegador com cinco fases de campanha, tutorial, revisão personalizada e Desafio Infinito. A identidade cartoon industrial da versão 2 foi preservada. A campanha pratica a separação dos materiais; o arcade oferece ondas e recordes locais sem alterar a progressão acadêmica.
+Versão 3.2.0. Jogo educacional 2D no navegador com cinco fases de campanha, tutorial, revisão personalizada e Desafio Infinito. A identidade cartoon industrial da versão 2 foi preservada. A campanha pratica a separação dos materiais; o arcade oferece ondas e recordes locais sem alterar a progressão acadêmica.
 
 ## Executar
 
@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Abra o endereço HTTP exibido pelo Vite, mantendo o terminal aberto. Não abra index.html por duplo clique. Chrome e Edge desktop são alvos; a validação desta rodada utilizou o navegador integrado baseado em Chromium.
+Abra o endereço HTTP exibido pelo Vite, mantendo o terminal aberto. Não abra index.html por duplo clique. O layout atende desktop, tablets e celulares em paisagem. A validação desta rodada utilizou o navegador integrado baseado em Chromium, com viewports descritos em docs/MOBILE_3_2.md; Android/iOS físicos ainda precisam de verificação.
 
 ```powershell
 npm test
@@ -19,7 +19,7 @@ npm run build
 npm run preview
 ```
 
-O build gera dist com todos os recursos locais; a instalação inicial precisa de internet, mas o jogo não depende de CDN, APIs, autenticação própria ou backend para operar. A hospedagem privada pode exigir login da plataforma; isso é independente do código do jogo.
+O build gera dist com todos os recursos locais; a instalação inicial precisa de internet, mas o jogo não depende de CDN, APIs, autenticação própria ou backend para operar. O GitHub Pages oferece uma publicação pública, sem login para jogar. O progresso é local à origem de cada navegador; não é transferido automaticamente da hospedagem anterior.
 
 ## Jogar
 
@@ -68,6 +68,28 @@ Tecnologias: Phaser3.90.0, Vite6.4.6, Vitest4.1.12 e JavaScript ES Modules. Repo
 
 ## Verificação e entrega acadêmica
 
-Os testes e limites reais estão em docs/TESTES.md. Foram aprovados 62 testes em 8 arquivos nesta rodada; não equivalem a validação de aprendizagem com pessoas. O relato técnico da versão 3.1 está em docs/VERSAO_3_1.md. O GDD editável está em docs/GDD.md e a versão de leitura em docs/GDD.pdf.
+Os testes e limites reais estão em docs/TESTES.md. Foram aprovados 67 testes em 9 arquivos nesta rodada; não equivalem a validação de aprendizagem com pessoas. A versão 3.2 está descrita em docs/MOBILE_3_2.md; o encerramento 3.1 está em docs/VERSAO_3_1.md. O GDD da campanha e da evolução até 3.1 está em docs/GDD.md e docs/GDD.pdf; o suplemento mobile 3.2 é docs/MOBILE_3_2.md.
 
 Continuam pendentes integrantes/matrículas, teste com pessoa externa e vídeo acadêmico público de 1–3min. Não foi feita medição sustentada de FPS, validação de toque em aparelho físico ou certificação de acessibilidade. A campanha e o arcade continuam sujeitos a balanceamento com jogadores reais.
+
+## Celular e reinício da trilha
+
+No celular, abra o link no navegador e jogue na horizontal. Girar para retrato, ocultar a aba ou perder foco pausa a partida; ao voltar, toque em Continuar. Nenhum bloqueio de orientação é necessário. O botão Tela cheia aparece quando o navegador oferece a API; o jogo também funciona sem ela.
+
+Toque e arraste um resíduo até a lixeira, ou toque no item e depois no destino. O gráfico fica acima do dedo durante o arrasto e o destino usa a posição do toque, com destaque e zonas maiores. Uma soltura inválida devolve o item à esteira. Toque em Retirar restos para preparar a embalagem selecionada.
+
+Reiniciar Trilha está na seleção de fases e nas configurações, com confirmação. Apaga apenas histórico, estrelas, melhores resultados e desbloqueios da campanha; mantém áudio, preferências do navegador e ranking infinito. Depois, Jogar campanha volta às instruções iniciais. Repetir tutorial abre o treino de três itens sem apagar o progresso.
+
+## GitHub Pages
+
+Publicação: https://amaralcharle.github.io/Trilha-seletiva/
+
+O workflow .github/workflows/deploy.yml roda npm ci, npm test e npm run build no push para main, envia dist e publica no ambiente github-pages. O Vite usa /Trilha-seletiva/ quando GITHUB_PAGES=true e ./ nos builds comuns. Não altere o nome real do subcaminho sem atualizar vite.config.js. Para reproduzir o build Pages em PowerShell:
+
+```powershell
+$env:GITHUB_PAGES='true'
+npm run build
+Remove-Item Env:GITHUB_PAGES
+```
+
+O endereço pode ser compartilhado pelo WhatsApp; não requer aplicativo nativo. Atualizações são publicadas apenas se os testes e o build passarem.

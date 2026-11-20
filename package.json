@@ -1,11 +1,11 @@
 {
   "name": "trilha-seletiva",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "type": "module",
   "private": true,
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build --base=./",
+    "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "audio:generate": "node tools/generate-audio.mjs"

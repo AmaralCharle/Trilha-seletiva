@@ -2,7 +2,7 @@
 export class FactoryEnvironment {
   constructor(scene) {
     this.scene=scene;
-    this.reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false;
+    this.reduced=(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false)||(globalThis.navigator?.hardwareConcurrency>0&&globalThis.navigator.hardwareConcurrency<=4);
     this.clock=0;
     scene.add.image(640,360,'factory').setDepth(-10);
     this.city=scene.add.image(674,240,'city').setDisplaySize(610,201).setDepth(-9);

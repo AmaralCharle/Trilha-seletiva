@@ -69,9 +69,12 @@ export function saveSettings(settings) {
 }
 
 export function resetProgress() {
+  // Settings share the legacy campaign key. Preserve them while resetting only
+  // campaign-owned fields; the independent arcade key is never touched.
+  const settings = clone(loadProgress().settings);
   storageNotice = '';
   memoryOnly = false;
-  return persist(fresh());
+  return persist({ ...fresh(), settings });
 }
 
 const cell = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
