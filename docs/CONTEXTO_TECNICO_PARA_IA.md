@@ -73,7 +73,7 @@ A especificação DOCX informa que a publicação 3.3 foi confirmada e registra 
 | `src/systems/sequence.js` | Aleatoriedade com sementes, Fisher–Yates, restrições de ordem e gerador contínuo limitado do arcade. |
 | `src/systems/infiniteSession.js` | Domínio do arcade: itens pendentes, vidas, pontuação, combo, ondas, precisão e fim. |
 | `src/systems/storage.js` | Progresso, histórico, configurações e CSV no `localStorage` da campanha. |
-| `src/systems/leaderboard.js` | Validação, ordenação e persistência do top 10 local do arcade, separado da campanha. |
+| `src/systems/leaderboard.js` | Validação, unicidade de apelidos, ordenação e persistência do top 10 local em `trilha-seletiva-infinite-v1`, separado da campanha. |
 | `src/systems/AudioManager.js` | Reprodução Phaser, volumes, silêncio, fades, pausa, efeitos, fila de troca e tratamento visual de falhas. |
 | `src/systems/ResultFlow.js` | Coordena encerramento uma única vez, introdução de derrota, skip e cancelamento de callbacks antigos. |
 | `src/systems/mobile.js` | Geometria pura para orientação, viewport compacto, resolução e entrada por toque/descarte. |
@@ -182,8 +182,8 @@ O catálogo tem 27 IDs (seis papel, cinco plástico, três vidro, cinco metal, o
 - Precisão é `acertos / resolvidos`, zero se nada foi resolvido; itens ainda pendentes são informados separadamente e não geram vidas adicionais no Game Over.
 - Ao perder a terceira vida, a simulação congela e uma única transição leva ao Game Over. Abandono não registra ranking.
 - Apelido é removido de caracteres de controle, aparado, limitado a 15 caracteres Unicode e usa “Jogador” se vazio.
-- Cada apelido normalizado só pode ter uma entrada no ranking: comparação sem diferenciar maiúsculas/minúsculas depois de `normalizeNickname`. `isNicknameTaken` faz a consulta; `saveInfiniteResult` retorna `status: 'nickname-taken'` e `saved: false` sem inserir duplicata.
-- A introdução arcade valida o apelido durante a edição e novamente ao iniciar, exibe erro acessível abaixo do campo e desativa “Começar desafio” em caso de conflito. A tela compacta reduz espaçamentos e mantém o painel rolável; um conflito encontrado ao repetir uma partida retorna à introdução para permitir trocar o nome.
+- O ranking local fica na chave `trilha-seletiva-infinite-v1`. Um apelido já registrado nessa chave não pode ser reutilizado para iniciar outra partida; a comparação aplica `normalizeNickname` e `toLowerCase()`. `isNicknameTaken` consulta a disponibilidade e `saveInfiniteResult` retorna `status: 'nickname-taken'` e `saved: false` sem inserir duplicata.
+- A introdução arcade valida o apelido durante a edição e novamente ao iniciar. Se o nome já estiver no ranking, exibe uma mensagem abaixo do campo e desativa “Começar desafio” até que seja informado um apelido disponível. A tela compacta reduz espaçamentos e mantém o painel rolável; um conflito encontrado ao repetir uma partida retorna à introdução para permitir trocar o nome.
 - Ranking mantém as dez melhores entradas locais, ordenadas por pontos descendentes, maior combo, onda, data mais antiga e ID. Só salva fim natural por três vidas perdidas com exatamente três erros/perdas. Limpar ranking exige confirmação e não altera a campanha.
 
 ## Cena, controles e identidade visual
