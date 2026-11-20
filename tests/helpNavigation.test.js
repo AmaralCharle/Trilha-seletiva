@@ -121,8 +121,14 @@ describe('screen navigation', () => {
     clickAction('play');
 
     expect(ui.dataset.screen).toBe('help');
-    expect(ui.innerHTML).not.toContain('class="help-guide"');
+    expect(ui.innerHTML).toContain('<b>Olhe, escolha e separe.</b>');
+    expect(ui.innerHTML).toContain('Arraste o resíduo da esteira até a lixeira.');
+    expect(ui.innerHTML).toContain('Teclado: <kbd>1</kbd> a <kbd>5</kbd> escolhem a lixeira');
+    expect(ui.innerHTML).toContain('data-action="tutorial">Treinar com o Eco</button>');
+    expect(ui.innerHTML).toContain('data-action="map">Ver minha trilha</button>');
     expect(ui.innerHTML).toContain('data-action="menu">Voltar</button>');
+    expect(ui.innerHTML).not.toContain('class="help-guide"');
+    expect(ui.innerHTML).not.toContain('data-guide-item=');
 
     clickAction('menu');
 
