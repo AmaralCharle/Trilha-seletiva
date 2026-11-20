@@ -206,7 +206,7 @@ describe('help screen navigation', () => {
     });
   });
 
-  it('returns an abandoned infinite session to its intro without saving ranking', async () => {
+  it('uses Voltar in the infinite pause and returns to its intro without saving ranking', async () => {
     const rankingKey = 'trilha-seletiva-infinite-v1';
     const rankingSave = JSON.stringify({ version: 1, entries: [] });
     memory.set(rankingKey, rankingSave);
@@ -218,6 +218,7 @@ describe('help screen navigation', () => {
     window.listeners.keydown({ key: 'Escape', preventDefault() {} });
 
     expect(modal.innerHTML).toContain('data-action="abandon">Voltar</button>');
+    expect(modal.innerHTML).not.toContain('Voltar ao menu');
 
     clickAction('abandon');
 
