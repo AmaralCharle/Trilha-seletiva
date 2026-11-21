@@ -7,6 +7,8 @@ import {loadProgress,saveAttempt,saveSettings,resetProgress,exportCSV} from './s
 import {ecoPoseSVG,itemSVG,binBodySVG,svgURL} from './ui/art.js';
 import {ResultFlow} from './systems/ResultFlow.js';
 import {InfiniteSession} from './systems/infiniteSession.js';
+import {CHALLENGES} from './config/infinite.js';
+import {loadChallengeProgress} from './systems/challengeProgress.js';
 import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname,isNicknameTaken} from './systems/leaderboard.js';
 import {escapeHTML,hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML} from './ui/arcade.js';
 import {needsLandscape,isCompactLandscape} from './systems/mobile.js';
@@ -98,7 +100,7 @@ function validateNickname(input=document.querySelector('#nickname')){
  if(begin)begin.disabled=taken;
  return !taken;
 }
-function infiniteIntro(){screen='arcade';session=null;idleScene();const rank=loadLeaderboard();render(arcadeIntroHTML(rank.entries,nickname));validateNickname();if(rank.notice)toast(rank.notice);}
+function infiniteIntro(){screen='arcade';session=null;idleScene();const rank=loadLeaderboard();render(arcadeIntroHTML(rank.entries,nickname,loadChallengeProgress(),CHALLENGES));validateNickname();if(rank.notice)toast(rank.notice);}
 function startInfinite(challengeId=1){
  const input=document.querySelector('#nickname');
  const chosenNickname=normalizeNickname(input?.value??nickname);
