@@ -10,7 +10,7 @@ import {InfiniteSession,ChallengeSession} from './systems/infiniteSession.js';
 import {CHALLENGES,getChallenge} from './config/infinite.js';
 import {loadChallengeProgress,unlockChallenge,saveChallengeScore} from './systems/challengeProgress.js';
 import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname,isNicknameTaken} from './systems/leaderboard.js';
-import {escapeHTML,hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML} from './ui/arcade.js';
+import {escapeHTML,hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML,challengeResultHTML} from './ui/arcade.js';
 import {needsLandscape,isCompactLandscape} from './systems/mobile.js';
 import './styles.css';
 const ui=document.querySelector('#ui');let progress=loadProgress(),session,currentLevel,review=false,screen='menu',mapReturnScreen='menu',reviewReturnScreen='menu',statsReturnScreen='menu',leaderboardReturnScreen='menu',showWasteCatalogGuide=false,nickname='Jogador',bestBefore=0,recordShown=false,seenWave=1;
@@ -67,6 +67,7 @@ function finish(result){
   defeat:ended.infinite||!result.pass,
   onStart:()=>{
    if(ended.infinite)completedRanking=saveInfiniteResult(result,nickname);
+   if(ended.challenge)saveChallengeScore(ended.challenge.id,result.score);
    else if(!ended.tutorial)progress=saveAttempt(result);
    scene().audio?.playMusic(ended.infinite||!result.pass?'gameover':'victory');
    if(!ended.infinite&&result.pass&&!review&&!ended.tutorial&&currentLevel.id<5)fx('unlock');
@@ -90,7 +91,7 @@ function settings(){screen='settings';idleScene();render(`<section class="panel 
 function credits(){screen='credits';idleScene();render(`<section class="panel"><h2>Feito para transformar</h2><p>Trilha Seletiva · Missão Reciclagem<br>Desafio P2 · Desenvolvimento de Jogos Digitais</p><p>Reconstrução em Phaser 3.90, JavaScript e Vite com assistência de IA (Codex/OpenAI). Cenário, robô e ilustrações vetoriais originais gerados em código. Sete músicas de modo, duas vinhetas de resultado e doze efeitos originais sintetizados em arquivos locais, com fonte reprodutível em tools/generate-audio.mjs. Sem downloads durante a partida.</p><p>Conteúdo: orientações oficiais de coleta seletiva de Vinhedo, USP e referências registradas em docs/CREDITOS.md. Classificação simplificada: a aceitação varia entre municípios.</p><p>Integrantes e matrículas: pendentes de preenchimento pelo grupo.</p>${button('Voltar à missão','menu','primary')}</section>`);}
 function dialog(title,text,actions){document.querySelector('#modal')?.remove();const el=document.createElement('div');el.id='modal';el.className='modal';el.innerHTML=`<section class="panel" role="dialog" aria-modal="true" aria-label="${title}"><h2>${title}</h2><p>${text}</p><div class="actions">${actions.map(([t,a,cls])=>button(t,a,cls??(a==='resume'?'primary':''))).join('')}</div></section>`;ui.append(el);el.querySelector('button').focus();}
 function pause(){if(screen!=='play'||session.paused)return;scene().cancelDrag();session.paused=true;scene().audio?.pause();scene().tweens.pauseAll();dialog('Uma pausa para respirar','A esteira e o relógio estão parados. Sua missão espera por você.',[['Continuar','resume'],[session.infinite?'Reiniciar desafio':'Reiniciar fase','restart'],[session.infinite||review||session.tutorial?'Voltar':'Voltar à trilha','abandon'],[progress.settings.sound?'Desligar sons':'Ligar sons','pauseSound'],...(document.fullscreenEnabled?[[document.fullscreenElement?'Sair da tela cheia':'Tela cheia','fullscreen']]:[])]);}
-function resume(){if(needsLandscape(window.innerWidth,window.innerHeight)){toast('Gire o aparelho para continuar a missão.');return;}document.querySelector('#modal')?.remove();if(session){session.paused=false;scene().tweens.resumeAll();scene().audio?.resume();}}
+function resume(){if(needsLandscape(window.innerWidth,window.innerHeight)){toast('Gire o aparelho para continuar a missão.');return;}document.querySelector('#modal')?.remove();if(session){session.paused=false;scene().tweens.resumeAll();scene().audio?.resume();if(session.won)showNextChallengeButton();}}
 function validateNickname(input=document.querySelector('#nickname')){
  if(!input)return !isNicknameTaken(nickname);
  const taken=isNicknameTaken(input.value);
@@ -158,6 +159,11 @@ function challengeVictory(s){
  scene().cancelDrag();scene().tweens.pauseAll();fx('unlock');waveBanner('DESAFIO VENCIDO!');
  dialog(`${s.challenge.title} vencido!`,`Você chegou ao Nível ${s.challenge.targetLevel} com ${s.score} pontos.${next?` O Desafio ${next} foi liberado.`:''} Quer seguir para o próximo ou continuar acumulando pontos neste nível?`,[...(next?[['Próximo desafio','nextChallenge','primary arcade-primary']]:[]),['Continuar','continueChallenge']]);
 }
+/** Botão fixo no canto inferior direito para avançar quando quiser após Continuar. */
+function showNextChallengeButton(){
+ if(!session?.challenge?.next||ui.querySelector('.next-challenge-fab'))return;
+ ui.insertAdjacentHTML('beforeend',button('Próximo desafio','nextChallenge','primary arcade-primary next-challenge-fab'));
+}
 /** Encerra a sessão atual (guardando o recorde) e inicia imediatamente o desafio seguinte. */
 function nextChallenge(){
  const next=session?.challenge?.next;
@@ -168,6 +174,12 @@ function nextChallenge(){
 }
 function finishInfinite(result){
  const ranking=completedRanking;screen='arcade-result';
+ const challenge=session?.challenge;
+ if(challenge){
+  render(challengeResultHTML(result,challenge,ranking,{nextUnlocked:!!challenge.next&&loadChallengeProgress().unlocked.includes(challenge.next)}));
+  if(ranking.notice)toast(ranking.notice);
+  return;
+ }
  render(arcadeResultHTML(result,ranking,ranking.newRecord?medal():eco('error')));if(ranking.notice)toast(ranking.notice);
 }
 function leaderboard(){if(screen!=='leaderboard')leaderboardReturnScreen=screen==='arcade'?'arcade':'menu';screen='leaderboard';session=null;idleScene();const ranking=loadLeaderboard();render(leaderboardHTML(ranking.entries));if(ranking.notice)toast(ranking.notice);}
