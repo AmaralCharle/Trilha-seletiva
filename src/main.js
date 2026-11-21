@@ -11,7 +11,7 @@ import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname,is
 import {escapeHTML,hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML} from './ui/arcade.js';
 import {needsLandscape,isCompactLandscape} from './systems/mobile.js';
 import './styles.css';
-const ui=document.querySelector('#ui');let progress=loadProgress(),session,currentLevel,review=false,screen='menu',mapReturnScreen='menu',reviewReturnScreen='menu',statsReturnScreen='menu',showWasteCatalogGuide=false,nickname='Jogador',bestBefore=0,recordShown=false,seenWave=1;
+const ui=document.querySelector('#ui');let progress=loadProgress(),session,currentLevel,review=false,screen='menu',mapReturnScreen='menu',reviewReturnScreen='menu',statsReturnScreen='menu',leaderboardReturnScreen='menu',showWasteCatalogGuide=false,nickname='Jogador',bestBefore=0,recordShown=false,seenWave=1;
 const game=new Phaser.Game({type:Phaser.AUTO,parent:'game',width:1280,height:720,backgroundColor:'#102f35',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[FactoryScene],render:{antialias:true},input:{activePointers:1}});
 const scene=()=>game.scene.getScene('Factory');
 const resultFlow=new ResultFlow();let completedRanking=null;
@@ -117,11 +117,11 @@ function finishInfinite(result){
  const ranking=completedRanking;screen='arcade-result';
  render(arcadeResultHTML(result,ranking,ranking.newRecord?medal():eco('error')));if(ranking.notice)toast(ranking.notice);
 }
-function leaderboard(){screen='leaderboard';session=null;idleScene();const ranking=loadLeaderboard();render(leaderboardHTML(ranking.entries));if(ranking.notice)toast(ranking.notice);}
+function leaderboard(){if(screen!=='leaderboard')leaderboardReturnScreen=screen==='arcade'?'arcade':'menu';screen='leaderboard';session=null;idleScene();const ranking=loadLeaderboard();render(leaderboardHTML(ranking.entries));if(ranking.notice)toast(ranking.notice);}
 const actions={
  skipResult:()=>resultFlow.skip(),menu:()=>{if(screen==='play'){pause();return;}menu();},mapBack:()=>mapReturnScreen==='help'?help(showWasteCatalogGuide):menu(),play:()=>progress.history.length?map():help(false),map,help:()=>help(true),
  tutorial:()=>start(1,false,true),level1:()=>start(1),retry:()=>start(currentLevel.id,review,session.tutorial),next:()=>start(currentLevel.id+1),review:()=>{reviewReturnScreen=screen;start(1,true);},stats:()=>stats(),statsBack:()=>statsReturnScreen==='map'?map():menu(),final:()=>stats(true),credits,settings,pause,resume,
- infinite:infiniteIntro,beginInfinite:startInfinite,retryInfinite:()=>startInfinite(session?.challengeId??1),leaderboard,
+ infinite:infiniteIntro,beginInfinite:startInfinite,retryInfinite:()=>startInfinite(session?.challengeId??1),leaderboard,leaderboardBack:()=>leaderboardReturnScreen==='arcade'?infiniteIntro():menu(),
  restart:()=>session.infinite?startInfinite(session.challengeId??1):start(currentLevel.id,review,session.tutorial),
  abandon:()=>{const arcade=session?.infinite,reviewSession=review,tutorialSession=session?.tutorial;session?.finish('abort');session=null;if(arcade)infiniteIntro();else if(reviewSession)returnToReviewOrigin();else if(tutorialSession)help(false);else map();},
  prepare:()=>scene().prepare(),hint:()=>feedback(true,'Arraste para a lixeira com o nome do material. Se houver RESTOS, use Retirar restos primeiro. Vidro não inclui espelho ou cerâmica. Consulte as regras locais.','guide'),

@@ -107,7 +107,7 @@ O estado de navegação é controlado por `screen` em `src/main.js`; não há ro
 13. **Partida arcade:** pontos, combo, resolvidos, vidas, onda, progresso até próxima onda e dicas. Durante a pausa, o botão de saída mudou de “Voltar ao menu” para “Voltar”; ele abandona a sessão atual e retorna à introdução arcade sem registrar o abandono no ranking local.
 14. **Introdução de derrota:** animação de desligamento por 1,75 s, opção de pular.
 15. **Game Over:** resultado persistente com tentar novamente, ranking e menu.
-16. **Ranking local:** top dez e confirmação antes de limpar.
+16. **Ranking local:** top dez e confirmação antes de limpar. O botão “Voltar” retorna à origem: à introdução do Desafio Infinito quando aberto por “Ver ranking” nessa tela, ou ao menu quando aberto por outro ponto.
 
 Modal de pausa e confirmações são HTML. O modal aplica foco inicial e contenção básica de Tab. Esc alterna pausa/retomada durante jogo e pula introdução de resultado. O botão de menu durante uma partida abre a pausa, em vez de abandonar diretamente.
 

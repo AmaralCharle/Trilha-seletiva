@@ -403,7 +403,11 @@ describe('screen navigation', () => {
     expect(setItem).not.toHaveBeenCalled();
   });
 
-  it('keeps ranking and menu navigation available from the infinite intro', async () => {
+  it('returns from ranking to the infinite intro without changing records', async () => {
+    const rankingKey = 'trilha-seletiva-infinite-v1';
+    const rankingSave = JSON.stringify({ version: 1, entries: [] });
+    memory.set(rankingKey, rankingSave);
+
     await import('../src/main.js');
     clickAction('infinite');
     expect(ui.dataset.screen).toBe('arcade');
@@ -413,10 +417,23 @@ describe('screen navigation', () => {
     clickAction('leaderboard');
     expect(ui.dataset.screen).toBe('leaderboard');
     expect(ui.innerHTML).toContain('Ranking local');
+    expect(ui.innerHTML).toContain('data-action="leaderboardBack">Voltar</button>');
+    expect(ui.innerHTML).toContain('data-action="clearRanking">Limpar recordes</button>');
 
-    clickAction('infinite');
+    clickAction('leaderboardBack');
     expect(ui.dataset.screen).toBe('arcade');
+    expect(memory.get(rankingKey)).toBe(rankingSave);
     clickAction('menu');
+    expect(ui.dataset.screen).toBe('menu');
+  });
+
+  it('returns to menu when ranking is opened from another screen', async () => {
+    await import('../src/main.js');
+    clickAction('menu');
+    clickAction('leaderboard');
+
+    expect(ui.dataset.screen).toBe('leaderboard');
+    clickAction('leaderboardBack');
     expect(ui.dataset.screen).toBe('menu');
   });
 
