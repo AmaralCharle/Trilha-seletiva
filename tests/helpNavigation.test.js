@@ -418,10 +418,15 @@ describe('screen navigation', () => {
     expect(ui.dataset.screen).toBe('leaderboard');
     expect(ui.innerHTML).toContain('Ranking local');
     expect(ui.innerHTML).toContain('data-action="leaderboardBack">Voltar</button>');
+    expect(ui.innerHTML).not.toContain('Menu principal');
     expect(ui.innerHTML).toContain('data-action="clearRanking">Limpar recordes</button>');
 
     clickAction('leaderboardBack');
     expect(ui.dataset.screen).toBe('arcade');
+    expect(ui.innerHTML).toContain('<h2>Desafios Progressivos</h2>');
+    expect(ui.innerHTML).toContain('data-challenge="1"');
+    expect(ui.innerHTML).toContain('data-challenge="2"');
+    expect(ui.innerHTML).toContain('data-challenge="3"');
     expect(memory.get(rankingKey)).toBe(rankingSave);
     clickAction('menu');
     expect(ui.dataset.screen).toBe('menu');
