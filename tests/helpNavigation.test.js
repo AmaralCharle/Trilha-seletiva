@@ -229,7 +229,7 @@ describe('screen navigation', () => {
     expect(ui.dataset.screen).toBe('menu');
   });
 
-  it('keeps help as map return after abandoning the tutorial from pause', async () => {
+  it('returns directly to basic campaign help when abandoning the tutorial from pause', async () => {
     const campaignSave = JSON.stringify({
       version: 1,
       unlocked: 1,
@@ -249,14 +249,17 @@ describe('screen navigation', () => {
     expect(ui.dataset.screen).toBe('play');
     clickAction('resume');
     window.listeners.keydown({ key: 'Escape', preventDefault() {} });
-    expect(modal.innerHTML).toContain('data-action="abandon">Voltar à trilha</button>');
+    expect(modal.innerHTML).toContain('data-action="abandon">Voltar</button>');
+    expect(modal.innerHTML).not.toContain('Voltar à trilha');
 
     clickAction('abandon');
 
+    expect(ui.dataset.screen).toBe('help');
+    expect(ui.innerHTML).not.toContain('class="help-guide"');
+    expect(ui.innerHTML).toContain('data-action="tutorial">Treinar com o Eco</button>');
+    clickAction('map');
     expect(ui.dataset.screen).toBe('map');
-    expect(ui.innerHTML).toContain('data-action="mapBack">Voltar</button>');
     clickAction('mapBack');
-
     expect(ui.dataset.screen).toBe('help');
     expect(memory.get(campaignKey)).toBe(campaignSave);
     expect(setItem).not.toHaveBeenCalled();
@@ -264,6 +267,31 @@ describe('screen navigation', () => {
       history: [],
       stars: {},
     });
+  });
+
+  it('keeps the normal campaign pause exit label and map destination', async () => {
+    const campaignSave = JSON.stringify({
+      version: 1,
+      unlocked: 1,
+      stars: {},
+      history: [],
+      settings: { sound: true, volume: 0.35 },
+    });
+    memory.set(campaignKey, campaignSave);
+
+    await import('../src/main.js');
+    clickAction('map');
+    clickAction('level1');
+    expect(ui.dataset.screen).toBe('play');
+    window.listeners.keydown({ key: 'Escape', preventDefault() {} });
+
+    expect(modal.innerHTML).toContain('data-action="abandon">Voltar à trilha</button>');
+
+    clickAction('abandon');
+
+    expect(ui.dataset.screen).toBe('map');
+    expect(memory.get(campaignKey)).toBe(campaignSave);
+    expect(setItem).not.toHaveBeenCalled();
   });
 
   it('uses Voltar in the infinite pause and returns to its intro without saving ranking', async () => {
