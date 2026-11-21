@@ -252,9 +252,19 @@ describe('screen navigation', () => {
     expect(modal.innerHTML).toContain('data-action="abandon">Voltar</button>');
     expect(modal.innerHTML).not.toContain('Voltar à trilha');
 
+    const screenTransitions = [];
+    Object.defineProperty(ui.dataset, 'screen', {
+      configurable: true,
+      get() { return this.currentScreen ?? 'play'; },
+      set(value) {
+        this.currentScreen = value;
+        screenTransitions.push(value);
+      },
+    });
     clickAction('abandon');
 
     expect(ui.dataset.screen).toBe('help');
+    expect(screenTransitions).toEqual(['help']);
     expect(ui.innerHTML).not.toContain('class="help-guide"');
     expect(ui.innerHTML).toContain('data-action="tutorial">Treinar com o Eco</button>');
     clickAction('map');
