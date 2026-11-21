@@ -108,13 +108,16 @@ export class InfiniteSession {
 /**
  * Sessão de um desafio do Modo Desafios. Reaproveita vidas, combo e classificação do arcade,
  * mas o nível sobe a cada 10 acertos (limitado ao último nível) e os resíduos sorteados são
- * filtrados pelo nível atual, mantendo as lixeiras do desafio na cena.
+ * filtrados pelo nível atual, mantendo as lixeiras do desafio na cena. Ao bater nível + meta
+ * de pontos, pausa e sinaliza a vitória.
  */
 export class ChallengeSession extends InfiniteSession {
   constructor(challenge, catalog, options = {}) {
     if (!challenge?.levels?.length) throw new Error('Desafio inválido.');
     super(catalog, { ...options, challengeId: challenge.id });
     this.challenge = challenge;
+    this.won = false;
+    this.victoryPending = false;
     this.level = { id: `challenge-${challenge.id}`, title: `${challenge.title} · ${challenge.subtitle}`, categories: [...challenge.bins] };
     this.applyDifficulty();
   }
@@ -137,13 +140,31 @@ export class ChallengeSession extends InfiniteSession {
     this.wave = Math.min(this.maxLevel, 1 + Math.floor(this.correct / CHALLENGE_RULES.correctPerLevel));
     this.applyDifficulty();
     if (this.lives === 0) this.finish('lives');
+    else this.checkVictory();
     return previous !== this.wave;
+  }
+
+  /** Vitória = último nível do desafio E pontuação meta. Dispara uma única vez. */
+  checkVictory() {
+    if (this.won || this.finished) return false;
+    if (this.wave < this.challenge.targetLevel || this.score < this.challenge.targetScore) return false;
+    this.won = true;
+    this.victoryPending = true;
+    this.paused = true;
+    return true;
+  }
+
+  /** Consome o aviso de vitória (a UI mostra o modal uma única vez). */
+  takeVictory() {
+    const pending = this.victoryPending;
+    this.victoryPending = false;
+    return pending;
   }
 
   finish(reason = 'lives') {
     const result = super.finish(reason);
     if (!result || result.mode === 'challenge') return result;
-    this.result = { ...result, mode: 'challenge', challengeId: this.challenge.id, level: this.wave };
+    this.result = { ...result, mode: 'challenge', challengeId: this.challenge.id, level: this.wave, won: this.won };
     return this.result;
   }
 }
