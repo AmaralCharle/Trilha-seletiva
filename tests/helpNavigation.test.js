@@ -350,6 +350,76 @@ describe('screen navigation', () => {
     expect(setItem).not.toHaveBeenCalled();
   });
 
+  it('keeps duplicate nickname validation on the active progressive challenge', async () => {
+    const rankingKey = 'trilha-seletiva-infinite-v1';
+    const rankingSave = JSON.stringify({
+      version: 1,
+      entries: [{
+        id: 'existing-entry',
+        nickname: 'Equipe',
+        score: 10,
+        wave: 1,
+        maxStreak: 1,
+        correct: 1,
+        wrong: 0,
+        missed: 0,
+        total: 1,
+        precision: 1,
+        date: '2026-11-20T00:00:00.000Z',
+      }],
+    });
+    memory.set(rankingKey, rankingSave);
+    const challengeOne = { disabled: false };
+    const error = { textContent: '', hidden: true };
+    const nicknameInput = {
+      value: 'Equipe',
+      attributes: {},
+      setAttribute(name, value) { this.attributes[name] = value; },
+      focus: vi.fn(),
+    };
+    const documentObject = globalThis.document;
+    const querySelector = documentObject.querySelector.bind(documentObject);
+    documentObject.querySelector = selector => {
+      if (selector === '#nickname') return nicknameInput;
+      if (selector === '#nickname-error') return error;
+      if (selector === '[data-challenge="1"]') return challengeOne;
+      return querySelector(selector);
+    };
+
+    await import('../src/main.js');
+    clickAction('infinite');
+
+    expect(ui.dataset.screen).toBe('arcade');
+    expect(challengeOne.disabled).toBe(true);
+    expect(error.hidden).toBe(false);
+    expect(error.textContent).toContain('Este apelido já está no ranking');
+
+    clickAction('beginInfinite', { challenge: '1' });
+
+    expect(ui.dataset.screen).toBe('arcade');
+    expect(nicknameInput.attributes['aria-invalid']).toBe('true');
+    expect(nicknameInput.focus).toHaveBeenCalled();
+    expect(memory.get(rankingKey)).toBe(rankingSave);
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it('keeps ranking and menu navigation available from the infinite intro', async () => {
+    await import('../src/main.js');
+    clickAction('infinite');
+    expect(ui.dataset.screen).toBe('arcade');
+    expect(ui.innerHTML).toContain('data-action="leaderboard">Ver ranking</button>');
+    expect(ui.innerHTML).toContain('data-action="menu">Voltar</button>');
+
+    clickAction('leaderboard');
+    expect(ui.dataset.screen).toBe('leaderboard');
+    expect(ui.innerHTML).toContain('Ranking local');
+
+    clickAction('infinite');
+    expect(ui.dataset.screen).toBe('arcade');
+    clickAction('menu');
+    expect(ui.dataset.screen).toBe('menu');
+  });
+
   it.each([
     ['menu', 'menu'],
     ['map', 'map'],
