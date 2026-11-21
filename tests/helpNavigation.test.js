@@ -44,11 +44,11 @@ let setItem;
 let ui;
 let modal;
 
-function clickAction(action) {
+function clickAction(action, attributes = {}) {
   ui.listeners.click({
     target: {
       closest(selector) {
-        return selector === '[data-action]' ? { dataset: { action } } : null;
+        return selector === '[data-action]' ? { dataset: { action, ...attributes } } : null;
       },
     },
     preventDefault() {},
@@ -312,7 +312,30 @@ describe('screen navigation', () => {
     await import('../src/main.js');
     clickAction('menu');
     clickAction('infinite');
-    clickAction('beginInfinite');
+
+    expect(ui.dataset.screen).toBe('arcade');
+    expect(ui.innerHTML).toContain('<h2>Desafios Progressivos</h2>');
+    expect(ui.innerHTML).toContain('Supere os 3 desafios progressivos de triagem!');
+    expect(ui.innerHTML).toContain('3 vidas por desafio. Erro ou item válido perdido: uma vida a menos.');
+    expect(ui.innerHTML).toContain('Acertos: 10 pontos; combo 3: 20 pontos; combo 10: 30 pontos.');
+    expect(ui.innerHTML).toContain('A cada 10 acertos você sobe de nível até a meta do desafio.');
+    expect(ui.innerHTML).toContain('Itens com RESTOS precisam de preparação [E]. Vença um desafio para desbloquear o próximo.');
+    expect([...ui.innerHTML.matchAll(/data-challenge="(\d+)"/g)].map(([, id]) => id)).toEqual(['1', '2', '3']);
+    expect(ui.innerHTML.match(/<button[^>]*data-challenge="1"[^>]*>/)?.[0]).not.toContain('disabled');
+    expect(ui.innerHTML).toMatch(/data-challenge="2"[^>]*disabled/);
+    expect(ui.innerHTML).toMatch(/data-challenge="3"[^>]*disabled/);
+    expect(ui.innerHTML).toContain('Desafio 1 • Iniciante');
+    expect(ui.innerHTML).toContain('Desafio 2 • Normal');
+    expect(ui.innerHTML).toContain('Bloqueado (Vença o D1)');
+    expect(ui.innerHTML).toContain('Desafio 3 • Avançado');
+    expect(ui.innerHTML).toContain('Bloqueado (Vença o D2)');
+    expect(ui.innerHTML).toContain('RECORDE PESSOAL');
+    expect(ui.innerHTML).toContain('for="nickname">Seu apelido');
+    expect(ui.innerHTML.indexOf('data-action="leaderboard">Ver ranking')).toBeGreaterThan(ui.innerHTML.indexOf('data-challenge="3"'));
+    expect(ui.innerHTML.indexOf('data-action="menu">Voltar')).toBeGreaterThan(ui.innerHTML.indexOf('data-action="leaderboard">Ver ranking'));
+
+    clickAction('beginInfinite', { challenge: '1' });
+    expect(ui.innerHTML).toContain('data-challenge-id="1"');
     window.listeners.keydown({ key: 'Escape', preventDefault() {} });
 
     expect(modal.innerHTML).toContain('data-action="abandon">Voltar</button>');
@@ -322,7 +345,7 @@ describe('screen navigation', () => {
 
     expect(ui.dataset.screen).toBe('arcade');
     expect(ui.innerHTML).toContain('data-action="beginInfinite"');
-    expect(ui.innerHTML).toContain('Começar desafio');
+    expect(ui.innerHTML).toContain('data-challenge="1"');
     expect(memory.get(rankingKey)).toBe(rankingSave);
     expect(setItem).not.toHaveBeenCalled();
   });

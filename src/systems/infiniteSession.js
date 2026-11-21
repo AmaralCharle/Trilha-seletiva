@@ -4,10 +4,11 @@ import { WasteSequenceGenerator } from './sequence.js';
 
 /** Infinite mode owns only bounded pending items, never an ever-growing deck/history. */
 export class InfiniteSession {
-  constructor(catalog, { seed, now = () => new Date().toISOString() } = {}) {
+  constructor(catalog, { seed, now = () => new Date().toISOString(), challengeId = 1 } = {}) {
     if (!Array.isArray(catalog) || !catalog.length) throw new Error('O catálogo do desafio está vazio.');
     this.infinite = true;
     this.review = false;
+    this.challengeId = challengeId;
     this.now = now;
     this.generator = new WasteSequenceGenerator(catalog, { seed });
     this.pending = new Map();

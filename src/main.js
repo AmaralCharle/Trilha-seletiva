@@ -94,12 +94,12 @@ function validateNickname(input=document.querySelector('#nickname')){
  const message=document.querySelector('#nickname-error');
  if(message){message.textContent=taken?nicknameTakenMessage:'';message.hidden=!taken;}
  input.setAttribute('aria-invalid',String(taken));
- const begin=document.querySelector('[data-action="beginInfinite"]');
+ const begin=document.querySelector('[data-challenge="1"]');
  if(begin)begin.disabled=taken;
  return !taken;
 }
 function infiniteIntro(){screen='arcade';session=null;idleScene();const rank=loadLeaderboard();render(arcadeIntroHTML(rank.entries,nickname));validateNickname();if(rank.notice)toast(rank.notice);}
-function startInfinite(){
+function startInfinite(challengeId=1){
  const input=document.querySelector('#nickname');
  const chosenNickname=normalizeNickname(input?.value??nickname);
  if(isNicknameTaken(chosenNickname)){
@@ -109,8 +109,8 @@ function startInfinite(){
  }
  resultFlow.cancel();nickname=chosenNickname;
  progress=loadProgress();bestBefore=loadLeaderboard().entries[0]?.score??0;recordShown=false;seenWave=1;
- session=new InfiniteSession(CATALOG);currentLevel=null;review=false;screen='play';
- render(`<section class="hud infinite-hud"><div><small>DESAFIO INFINITO</small><h2 id="wave">Onda 1 · Iniciante</h2></div><div class="hud-stats"><div><small>PONTOS</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="streak">0</strong></div><div><small>RESOLVIDOS</small><strong id="count">0</strong></div><div><small>VIDAS</small><span id="lives" data-value="3">${hearts(3)}</span></div>${button('Pausar','pause')}</div></section><div class="mission"><span id="wave-goal">10 ITENS PARA A PRÓXIMA ONDA</span><div><i id="progress-bar"></i></div></div><div id="wave-banner" role="status" aria-live="polite"></div><div class="coach">${eco('guide')}<div><b>ECO · CENTRAL DE TRIAGEM</b><p id="feedback">Três vidas, cinco destinos. Vamos construir sua melhor sequência!</p></div></div><div class="bottom-controls"><strong id="selected-item" aria-live="polite">Toque em um resíduo</strong><span><kbd>1–5</kbd> separar · <kbd>Tab</kbd> selecionar · <kbd>Esc</kbd> pausar</span>${button('Retirar restos','prepare','small')}${button('Repetir dica','hint','small')}</div>`);
+ session=new InfiniteSession(CATALOG,{challengeId});currentLevel=null;review=false;screen='play';
+ render(`<section class="hud infinite-hud" data-challenge-id="${challengeId}"><div><small>DESAFIO INFINITO</small><h2 id="wave">Onda 1 · Iniciante</h2></div><div class="hud-stats"><div><small>PONTOS</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="streak">0</strong></div><div><small>RESOLVIDOS</small><strong id="count">0</strong></div><div><small>VIDAS</small><span id="lives" data-value="3">${hearts(3)}</span></div>${button('Pausar','pause')}</div></section><div class="mission"><span id="wave-goal">10 ITENS PARA A PRÓXIMA ONDA</span><div><i id="progress-bar"></i></div></div><div id="wave-banner" role="status" aria-live="polite"></div><div class="coach">${eco('guide')}<div><b>ECO · CENTRAL DE TRIAGEM</b><p id="feedback">Três vidas, cinco destinos. Vamos construir sua melhor sequência!</p></div></div><div class="bottom-controls"><strong id="selected-item" aria-live="polite">Toque em um resíduo</strong><span><kbd>1–5</kbd> separar · <kbd>Tab</kbd> selecionar · <kbd>Esc</kbd> pausar</span>${button('Retirar restos','prepare','small')}${button('Repetir dica','hint','small')}</div>`);
  scene().start(session,updateHUD,finish,feedback);beginMusic('infinite');syncViewport();
 }
 function finishInfinite(result){
@@ -121,8 +121,8 @@ function leaderboard(){screen='leaderboard';session=null;idleScene();const ranki
 const actions={
  skipResult:()=>resultFlow.skip(),menu:()=>{if(screen==='play'){pause();return;}menu();},mapBack:()=>mapReturnScreen==='help'?help(showWasteCatalogGuide):menu(),play:()=>progress.history.length?map():help(false),map,help:()=>help(true),
  tutorial:()=>start(1,false,true),level1:()=>start(1),retry:()=>start(currentLevel.id,review,session.tutorial),next:()=>start(currentLevel.id+1),review:()=>{reviewReturnScreen=screen;start(1,true);},stats:()=>stats(),statsBack:()=>statsReturnScreen==='map'?map():menu(),final:()=>stats(true),credits,settings,pause,resume,
- infinite:infiniteIntro,beginInfinite:startInfinite,retryInfinite:startInfinite,leaderboard,
- restart:()=>session.infinite?startInfinite():start(currentLevel.id,review,session.tutorial),
+ infinite:infiniteIntro,beginInfinite:startInfinite,retryInfinite:()=>startInfinite(session?.challengeId??1),leaderboard,
+ restart:()=>session.infinite?startInfinite(session.challengeId??1):start(currentLevel.id,review,session.tutorial),
  abandon:()=>{const arcade=session?.infinite,reviewSession=review,tutorialSession=session?.tutorial;session?.finish('abort');session=null;if(arcade)infiniteIntro();else if(reviewSession)returnToReviewOrigin();else if(tutorialSession)help(false);else map();},
  prepare:()=>scene().prepare(),hint:()=>feedback(true,'Arraste para a lixeira com o nome do material. Se houver RESTOS, use Retirar restos primeiro. Vidro não inclui espelho ou cerâmica. Consulte as regras locais.','guide'),
  sound:()=>{progress=saveSettings({...progress.settings,sound:!progress.settings.sound});scene().audio?.setSettings(progress.settings);fx('select');if(screen==='settings')settings();else document.querySelector('[data-action="sound"]').textContent=progress.settings.sound?'Som ligado':'Som desligado';},
@@ -136,7 +136,7 @@ const actions={
  cancelReset:()=>{document.querySelector('#modal')?.remove();document.querySelector('[data-action=reset]')?.focus();},
  confirmReset:()=>{resultFlow.cancel();session=null;progress=resetProgress();scene().audio?.setSettings(progress.settings);map();toast('Trilha reiniciada! Sua jornada começa na primeira fase.');}
 };
-ui.addEventListener('click',e=>{scene().audio?.unlock();const a=e.target.closest('[data-action]');if(a){e.preventDefault();actions[a.dataset.action]?.();}const l=e.target.closest('[data-level]');if(l&&!l.disabled)start(Number(l.dataset.level));});
+ui.addEventListener('click',e=>{scene().audio?.unlock();const a=e.target.closest('[data-action]');if(a){e.preventDefault();if(a.dataset.challenge)actions[a.dataset.action]?.(Number(a.dataset.challenge));else actions[a.dataset.action]?.();}const l=e.target.closest('[data-level]');if(l&&!l.disabled)start(Number(l.dataset.level));});
 ui.addEventListener('input',e=>{if(e.target.id==='nickname'){validateNickname(e.target);return;}const keys={'music-volume':'musicVolume','effects-volume':'effectsVolume'},key=keys[e.target.id];if(key){progress=saveSettings({...progress.settings,[key]:Number(e.target.value)});scene().audio?.setSettings(progress.settings);document.querySelector(key==='musicVolume'?'#music-value':'#effects-value').textContent=Math.round(Number(e.target.value)*100)+'%';}});
 window.addEventListener('keydown',e=>{const modal=document.querySelector('#modal');if(modal&&e.key==='Tab'){const controls=[...modal.querySelectorAll('button,input,a')];const first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}return;}if(screen==='result-intro'&&['Escape','Enter',' '].includes(e.key)){e.preventDefault();resultFlow.skip();return;}if(e.key==='Escape'&&document.querySelector('#modal')&&screen!=='play'){actions.cancelReset();return;}if(e.key==='Escape'&&screen==='play'){session.paused?resume():pause();}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});
