@@ -141,3 +141,22 @@ describe('Desafio 1 — progresso salvo no navegador',()=>{
   expect(m.loadChallengeProgress()).toMatchObject({unlocked:[1],best:{}});
  });
 });
+
+describe('Desafio 1 — ranking local',()=>{
+ let memory;
+ beforeEach(()=>{memory=new Map();vi.resetModules();vi.stubGlobal('localStorage',{getItem:k=>memory.get(k)??null,setItem:(k,v)=>memory.set(k,v)});});
+ it('o fim da partida do desafio entra no ranking com o nível alcançado',async()=>{
+  const lb=await import('../src/systems/leaderboard.js');
+  const s=make('ranking');
+  for(let n=0;n<35;n++){s.paused=false;correct(s);}
+  for(let n=0;n<3;n++)wrong(s);
+  const saved=lb.saveInfiniteResult(s.result,'Serjao');
+  expect(saved).toMatchObject({saved:true,position:1});
+  expect(lb.loadLeaderboard().entries[0]).toMatchObject({nickname:'Serjao',score:s.result.score,wave:4});
+ });
+ it('partida abandonada do desafio continua fora do ranking',async()=>{
+  const lb=await import('../src/systems/leaderboard.js');
+  const s=make();correctTimes(s,5);
+  expect(lb.saveInfiniteResult(s.finish('abort'),'Serjao').saved).toBe(false);
+ });
+});
