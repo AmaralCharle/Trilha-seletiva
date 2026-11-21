@@ -6,8 +6,8 @@ import {Session,buildDeck} from './systems/session.js';
 import {loadProgress,saveAttempt,saveSettings,resetProgress,exportCSV} from './systems/storage.js';
 import {ecoPoseSVG,itemSVG,binBodySVG,svgURL} from './ui/art.js';
 import {ResultFlow} from './systems/ResultFlow.js';
-import {InfiniteSession} from './systems/infiniteSession.js';
-import {CHALLENGES} from './config/infinite.js';
+import {InfiniteSession,ChallengeSession} from './systems/infiniteSession.js';
+import {CHALLENGES,getChallenge} from './config/infinite.js';
 import {loadChallengeProgress} from './systems/challengeProgress.js';
 import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname,isNicknameTaken} from './systems/leaderboard.js';
 import {escapeHTML,hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML} from './ui/arcade.js';
@@ -43,9 +43,10 @@ function updateHUD(s){
  const selected=document.querySelector('#selected-item');if(selected)selected.textContent=scene().selected?.item.name||'Toque em um resíduo';
  const setValue=(id,value,animate=false)=>{const el=document.querySelector('#'+id);if(!el)return;const next=String(value);if(el.textContent!==next){el.textContent=next;if(animate){el.classList.remove('value-pop');void el.offsetWidth;el.classList.add('value-pop');}}};
  setValue('score',s.score,true);setValue('streak',s.streak+(s.streak>=3?' · '+(s.infinite?s.multiplier:2)+'×':''),true);
+ if(s.challenge){updateChallengeHUD(s);return;}
  if(s.infinite){
   setValue('count',s.resolvedCount);setValue('wave',`Onda ${s.wave} · ${s.difficulty.name}`);
-  const lives=document.querySelector('#lives');if(lives.dataset.value!==String(s.lives)){lives.dataset.value=s.lives;lives.innerHTML=hearts(s.lives);lives.classList.remove('life-pulse');void lives.offsetWidth;lives.classList.add('life-pulse');}
+  updateLives(s);
   document.querySelector('#progress-bar').style.width=(s.resolvedCount%10*10)+'%';
   document.querySelector('#wave-goal').textContent=`${10-s.resolvedCount%10} ITENS PARA A PRÓXIMA ONDA`;
   if(s.wave!==seenWave){seenWave=s.wave;fx('wave');scene().audio?.setIntensity(s.wave);waveBanner(`ONDA ${s.wave} · ${s.difficulty.name}`);feedback(true,'Nova onda! Observe os materiais e mantenha seu ritmo.','guide');}
@@ -101,6 +102,9 @@ function validateNickname(input=document.querySelector('#nickname')){
  return !taken;
 }
 function infiniteIntro(){screen='arcade';session=null;idleScene();const rank=loadLeaderboard();render(arcadeIntroHTML(rank.entries,nickname,loadChallengeProgress(),CHALLENGES));validateNickname();if(rank.notice)toast(rank.notice);}
+function arcadeHUD({challengeId,tag,title,countLabel,goal,message}){
+ return `<section class="hud infinite-hud" data-challenge-id="${challengeId}"><div><small>${tag}</small><h2 id="wave">${title}</h2></div><div class="hud-stats"><div><small>PONTOS</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="streak">0</strong></div><div><small>${countLabel}</small><strong id="count">0</strong></div><div><small>VIDAS</small><span id="lives" data-value="3">${hearts(3)}</span></div>${button('Pausar','pause')}</div></section><div class="mission"><span id="wave-goal">${goal}</span><div><i id="progress-bar"></i></div></div><div id="wave-banner" role="status" aria-live="polite"></div><div class="coach">${eco('guide')}<div><b>ECO · CENTRAL DE TRIAGEM</b><p id="feedback">${message}</p></div></div><div class="bottom-controls"><strong id="selected-item" aria-live="polite">Toque em um resíduo</strong><span><kbd>1–5</kbd> separar · <kbd>Tab</kbd> selecionar · <kbd>Esc</kbd> pausar</span>${button('Retirar restos','prepare','small')}${button('Repetir dica','hint','small')}</div>`;
+}
 function startInfinite(challengeId=1){
  const input=document.querySelector('#nickname');
  const chosenNickname=normalizeNickname(input?.value??nickname);
@@ -109,11 +113,41 @@ function startInfinite(challengeId=1){
   else infiniteIntro();
   return;
  }
+ const challenge=getChallenge(challengeId);
+ if(challenge&&!loadChallengeProgress().unlocked.includes(challengeId)){infiniteIntro();return;}
  resultFlow.cancel();nickname=chosenNickname;
  progress=loadProgress();bestBefore=loadLeaderboard().entries[0]?.score??0;recordShown=false;seenWave=1;
- session=new InfiniteSession(CATALOG,{challengeId});currentLevel=null;review=false;screen='play';
- render(`<section class="hud infinite-hud" data-challenge-id="${challengeId}"><div><small>DESAFIO INFINITO</small><h2 id="wave">Onda 1 · Iniciante</h2></div><div class="hud-stats"><div><small>PONTOS</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="streak">0</strong></div><div><small>RESOLVIDOS</small><strong id="count">0</strong></div><div><small>VIDAS</small><span id="lives" data-value="3">${hearts(3)}</span></div>${button('Pausar','pause')}</div></section><div class="mission"><span id="wave-goal">10 ITENS PARA A PRÓXIMA ONDA</span><div><i id="progress-bar"></i></div></div><div id="wave-banner" role="status" aria-live="polite"></div><div class="coach">${eco('guide')}<div><b>ECO · CENTRAL DE TRIAGEM</b><p id="feedback">Três vidas, cinco destinos. Vamos construir sua melhor sequência!</p></div></div><div class="bottom-controls"><strong id="selected-item" aria-live="polite">Toque em um resíduo</strong><span><kbd>1–5</kbd> separar · <kbd>Tab</kbd> selecionar · <kbd>Esc</kbd> pausar</span>${button('Retirar restos','prepare','small')}${button('Repetir dica','hint','small')}</div>`);
+ currentLevel=null;review=false;screen='play';
+ if(challenge){
+  session=new ChallengeSession(challenge,CATALOG);
+  render(arcadeHUD({challengeId,tag:`${challenge.title} · ${challenge.subtitle}`.toUpperCase(),title:session.difficulty.name,countLabel:'ACERTOS',goal:challengeGoalText(session),message:`${session.difficulty.name}: ${session.difficulty.categories.map(c=>names[c]).join(' e ')} na esteira. As ${challenge.bins.length} lixeiras já estão prontas!`}));
+ }else{
+  session=new InfiniteSession(CATALOG,{challengeId});
+  render(arcadeHUD({challengeId,tag:'DESAFIO INFINITO',title:'Onda 1 · Iniciante',countLabel:'RESOLVIDOS',goal:'10 ITENS PARA A PRÓXIMA ONDA',message:'Três vidas, cinco destinos. Vamos construir sua melhor sequência!'}));
+ }
  scene().start(session,updateHUD,finish,feedback);beginMusic('infinite');syncViewport();
+}
+function challengeGoalText(s){
+ if(s.won)return 'DESAFIO VENCIDO · CONTINUE PONTUANDO';
+ if(s.wave<s.maxLevel)return `${s.correctToNextLevel} ACERTOS PARA O NÍVEL ${s.wave+1}`;
+ return `META: ${Math.min(s.score,s.challenge.targetScore)} / ${s.challenge.targetScore} PONTOS`;
+}
+function updateLives(s){
+ const lives=document.querySelector('#lives');
+ if(!lives||lives.dataset.value===String(s.lives))return;
+ lives.dataset.value=s.lives;lives.innerHTML=hearts(s.lives);lives.classList.remove('life-pulse');void lives.offsetWidth;lives.classList.add('life-pulse');
+}
+function updateChallengeHUD(s){
+ const setText=(id,value)=>{const el=document.querySelector('#'+id);if(el&&el.textContent!==String(value))el.textContent=value;};
+ setText('count',s.correct);setText('wave',s.difficulty.name);setText('wave-goal',challengeGoalText(s));updateLives(s);
+ const bar=document.querySelector('#progress-bar');
+ if(bar)bar.style.width=(s.wave<s.maxLevel?(s.correct%10)*10:Math.min(100,s.score/s.challenge.targetScore*100))+'%';
+ if(s.wave!==seenWave){
+  const added=s.difficulty.categories.filter(c=>!s.challenge.levels[seenWave-1]?.categories.includes(c));
+  seenWave=s.wave;fx('wave');scene().audio?.setIntensity(s.wave);waveBanner(`NÍVEL ${s.wave}`);
+  feedback(true,added.length?`Novo material na esteira: ${added.map(c=>names[c]).join(', ')}!`:'Novo nível! A esteira ficou mais rápida.','guide');
+ }
+ if(!recordShown&&bestBefore>0&&s.score>bestBefore){recordShown=true;fx('record');waveBanner('NOVO RECORDE!');}
 }
 function finishInfinite(result){
  const ranking=completedRanking;screen='arcade-result';
