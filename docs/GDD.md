@@ -133,6 +133,21 @@ O arcade fica disponível desde o início, sem exigir conclusão da campanha. Co
 
 A última vida encerra imediatamente a simulação. Pendentes restantes não descontam vidas e aparecem separadamente do total resolvido. A precisão é acertos/resolvidos, ou zero sem decisões. A tela GAME OVER informa pontuação, onda, acertos, erros, perdas, melhor combo, precisão e posição local quando houver. O jogador pode tentar novamente, abrir ranking ou retornar ao menu. O apelido tem até 15 caracteres, padrão Jogador. Dez registros locais são ordenados por pontos, combo, onda e data; limpar recordes exige confirmação e não altera a campanha. Abandono não entra no ranking.
 
+### Desafios Progressivos — Desafio 1 (Iniciante)
+
+Na tela "Desafios Progressivos" (botão Desafio Infinito do menu), o botão **Desafio 1 • Iniciante** fica liberado desde o início e mostra a meta e o recorde. Usa as regras do arcade (3 vidas, 10/20/30 pontos por combo, erro/restos/item perdido custam uma vida e zeram o combo), mas o nível sobe a cada **10 acertos** e para no último nível. As 5 lixeiras aparecem desde o Nível 1, com uma esteira esquerda → direita.
+
+| Nível | Resíduos na esteira | Velocidade | Intervalo |
+|---|---|---|---|
+| 1 | Papel + Plástico | 80 px/s | 2,5 s |
+| 2 | + Vidro | 85 px/s | 2,4 s |
+| 3 | + Metal (entram confundíveis e itens com restos) | 90 px/s | 2,3 s |
+| 4 (final) | + Rejeito (os 27 itens) | 95 px/s | 2,2 s |
+
+Vitória: Nível 4 **e** 350 pontos. A partida pausa, libera o Desafio 2 e oferece **Próximo desafio** ou **Continuar**; ao continuar, um botão fixo **Próximo desafio** aparece no canto inferior direito. Os botões dos desafios são liberados pelo progresso salvo na chave `trilha-seletiva-desafios-v1`, que também guarda o recorde de cada desafio.
+
+> ⚠️ A definir: intervalos de surgimento e frações de itens confundíveis/com restos por nível não constam da especificação; os valores acima são a escolha inicial da implementação.
+
 ### Apresentação dos resultados na versão 3.1
 
 O domínio conclui a sessão uma única vez. ResultFlow salva em onStart e protege a apresentação contra duplicatas. A derrota congela geração e interação, reduz a iluminação, reage nas pequenas luzes e mostra Eco com expressão de erro. A introdução dura 1,75 s, pode ser pulada e conduz a um painel persistente. Navegar ou reiniciar cancela callbacks antigos. Game Over usa música original de 6,4 s sem loop; vitória usa vinheta própria. As vozes musicais são trocadas em sequência, sem simultaneidade.

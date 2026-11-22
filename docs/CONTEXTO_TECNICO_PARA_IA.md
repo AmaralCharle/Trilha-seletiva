@@ -186,6 +186,15 @@ O catálogo tem 27 IDs (seis papel, cinco plástico, três vidro, cinco metal, o
 - A introdução arcade valida o apelido durante a edição e novamente ao iniciar. Se o nome já estiver no ranking, exibe uma mensagem abaixo do campo e desativa “Desafio 1 • Iniciante” até que seja informado um apelido disponível. A tela compacta reduz espaçamentos e mantém o painel rolável; um conflito encontrado ao repetir uma partida retorna à introdução para permitir trocar o nome.
 - Ranking mantém as dez melhores entradas locais, ordenadas por pontos descendentes, maior combo, onda, data mais antiga e ID. Só salva fim natural por três vidas perdidas com exatamente três erros/perdas. Limpar ranking exige confirmação e não altera a campanha.
 
+## Desafios Progressivos (Desafio 1)
+
+- Configuração em `CHALLENGES` (`src/config/infinite.js`); `getChallengeLevel(challenge, nível)` devolve velocidade, intervalo, categorias sorteadas e lixeiras do nível. Desafios 2 e 3 entram no mesmo registro.
+- `ChallengeSession` (`src/systems/infiniteSession.js`) estende `InfiniteSession`: o nível sobe a cada 10 **acertos** (não decisões) e para no último; o gerador só sorteia as categorias do nível, enquanto `level.categories` mantém as lixeiras na cena.
+- Vitória (`targetLevel` + `targetScore`) pausa a sessão uma única vez (`takeVictory()`); a UI libera o próximo desafio, salva o recorde e abre o modal Próximo desafio / Continuar. Após Continuar, `.next-challenge-fab` fica no canto inferior direito.
+- `startInfinite(id)` usa `ChallengeSession` quando o desafio existe em `CHALLENGES` e está liberado; caso contrário mantém a sessão infinita como antes.
+- O resultado usa `mode: 'challenge'` e entra no mesmo ranking local do Desafio Infinito.
+- Progresso em `trilha-seletiva-desafios-v1` (`src/systems/challengeProgress.js`): `unlocked` (sempre contém 1) e `best` por desafio; fallback em memória se o navegador recusar. O fim de partida de um desafio continua salvando no ranking local.
+
 ## Cena, controles e identidade visual
 
 O Phaser usa mundo lógico 1280×720, Scale Manager `FIT` e uma `FactoryScene`. A cena compõe fábrica/cidade com SVGs carregados uma vez como texturas, cartões de resíduos, lixeiras e objetos ambientais. A esteira vai aproximadamente de entrada x=92 até a saída x>1195; lixeiras são posicionadas abaixo dela. Itens ativos de campanha são limitados a seis; revisão mantém um de cada vez. A seleção tem destaque visual.
@@ -221,6 +230,7 @@ Controles:
 
 - Campanha/configurações: chave `trilha-seletiva-v1`, versão de schema 1. Histórico limitado a 500 tentativas.
 - Arcade: chave `trilha-seletiva-infinite-v1`, versão 1, dez entradas.
+- Desafios progressivos: chave `trilha-seletiva-desafios-v1`, versão 1, com desbloqueios e recorde por desafio.
 - `loadProgress()` valida tentativas e reconstrói estrelas/desbloqueio a partir de tentativas aprovadas não-abortadas; não confia cegamente em contadores salvos. Configuração antiga `volume` migra para efeitos; novos volumes são limitados a 0..1.
 - Falha de leitura/escrita muda para fallback em memória e sinaliza aviso na UI. Não há servidor.
 - Reset da campanha preserva preferências, apaga histórico/estrelas/desbloqueios da campanha e não toca na chave do arcade nem em outras chaves. Não usa `localStorage.clear()`.
