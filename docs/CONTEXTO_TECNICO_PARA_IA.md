@@ -195,6 +195,15 @@ O catálogo tem 27 IDs (seis papel, cinco plástico, três vidro, cinco metal, o
 - O resultado usa `mode: 'challenge'` e entra no mesmo ranking local do Desafio Infinito.
 - Progresso em `trilha-seletiva-desafios-v1` (`src/systems/challengeProgress.js`): `unlocked` (sempre contém 1) e `best` por desafio; fallback em memória se o navegador recusar. O fim de partida de um desafio continua salvando no ranking local.
 
+## Desafios Progressivos (Desafio 2)
+
+- `CHALLENGES[2]` em `src/config/infinite.js`: 4 níveis com as 5 lixeiras e as 5 categorias, `targetLevel: 4`, `targetScore: 500`, `next: 3`. A velocidade vem de `percentSpeed(base, percent, nível)` (composto, `Math.floor`): 95/109/125/144 px/s. Intervalos 2,2/2,0/1,8/1,6 s; `trickyFraction` 0,3 e `prepFraction` 0,25.
+- `getChallengeLevel` devolve também `speedBoost` (% em relação ao nível anterior, 0 no Nível 1), usado na mensagem de troca de nível quando nenhum material novo entra.
+- `registerChallengeVictory(challenge, score)` (`challengeProgress.js`) libera `challenge.next` e salva o recorde; `challengeVictory` em `main.js` usa essa função.
+- `playableNext(challenge)` em `main.js`: o próximo desafio só é oferecido (modal, botão fixo, tela de fim) se já estiver registrado em `CHALLENGES`. O progresso libera o Desafio 3 mesmo assim; quando ele for registrado, o fluxo passa a funcionar sem outras mudanças.
+- Card: bloqueado mostra cadeado + `Bloqueado (Vença o D{n-1})` + requisito do desafio anterior; liberado mas sem registro mostra "Liberado · Em breve" desativado.
+- Testes em `tests/challenge2.test.js`.
+
 ## Cena, controles e identidade visual
 
 O Phaser usa mundo lógico 1280×720, Scale Manager `FIT` e uma `FactoryScene`. A cena compõe fábrica/cidade com SVGs carregados uma vez como texturas, cartões de resíduos, lixeiras e objetos ambientais. A esteira vai aproximadamente de entrada x=92 até a saída x>1195; lixeiras são posicionadas abaixo dela. Itens ativos de campanha são limitados a seis; revisão mantém um de cada vez. A seleção tem destaque visual.

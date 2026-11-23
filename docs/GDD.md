@@ -148,6 +148,23 @@ Vitória: Nível 4 **e** 350 pontos. A partida pausa, libera o Desafio 2 e ofere
 
 > ⚠️ A definir: intervalos de surgimento e frações de itens confundíveis/com restos por nível não constam da especificação; os valores acima são a escolha inicial da implementação.
 
+### Desafios Progressivos — Desafio 2 (Normal)
+
+O botão **Desafio 2 • Normal** começa bloqueado, com cadeado e o requisito "Bloqueado (Vença o D1) · Requisito: Nível 4 + 350 pts no D1". Ele é liberado ao vencer o Desafio 1 e passa a mostrar a meta e o recorde. As regras de vidas, combo e avanço de nível (10 acertos) são as mesmas do Desafio 1. As 5 lixeiras e os 27 resíduos, incluindo os confundíveis e os itens com restos, estão ativos desde o Nível 1, com uma esteira esquerda → direita.
+
+A velocidade cresce 15% por nível de forma composta, arredondada para baixo (`percentSpeed(95, 15, nível)`):
+
+| Nível | Resíduos na esteira | Velocidade | Intervalo |
+|---|---|---|---|
+| 1 | Todos os 27 | 95 px/s | 2,2 s |
+| 2 | Todos os 27 | 109 px/s (+15%) | 2,0 s |
+| 3 | Todos os 27 | 125 px/s (+15%) | 1,8 s |
+| 4 (final) | Todos os 27 | 144 px/s (+15%) | 1,6 s |
+
+Itens confundíveis: 30%; itens com restos: 25%, fixos nos 4 níveis. Vitória: Nível 4 **e** 500 pontos. A partida pausa, libera o Desafio 3 e oferece **Próximo desafio** ou **Continuar**. Enquanto o Desafio 3 não estiver registrado em `CHALLENGES`, o modal mostra só **Continuar** ("O Desafio 3 foi liberado e chega em breve"), o botão fixo não aparece e o card do Desafio 3 fica desativado como "Liberado · Em breve".
+
+> ⚠️ A definir: intervalos e frações de itens confundíveis/com restos não constam da especificação; os valores acima são a escolha inicial da implementação.
+
 ### Apresentação dos resultados na versão 3.1
 
 O domínio conclui a sessão uma única vez. ResultFlow salva em onStart e protege a apresentação contra duplicatas. A derrota congela geração e interação, reduz a iluminação, reage nas pequenas luzes e mostra Eco com expressão de erro. A introdução dura 1,75 s, pode ser pulada e conduz a um painel persistente. Navegar ou reiniciar cancela callbacks antigos. Game Over usa música original de 6,4 s sem loop; vitória usa vinheta própria. As vozes musicais são trocadas em sequência, sem simultaneidade.
