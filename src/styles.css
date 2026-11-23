@@ -21,6 +21,8 @@
 .arcade-challenge-status{font-size:11px;line-height:1.3;color:#7a6240;overflow-wrap:anywhere}
 .arcade-challenge:disabled{border-color:#b3b99f;background:linear-gradient(#e9eadb,#d9ddc9);box-shadow:0 3px 0 #aab197;color:#65715e;opacity:1}
 .arcade-challenge:disabled:hover{transform:none;filter:none;box-shadow:0 3px 0 #aab197}
+.arcade-challenge-lock{display:inline-block;width:12px;height:12px;margin-right:4px;vertical-align:-1px;fill:currentColor}
+.arcade-challenge-req{display:block;margin-top:2px;font-size:10.5px;font-weight:600;opacity:.9}
 .arcade-intro-actions{margin-top:8px}
 .arcade-intro-actions>button{flex:1}
 @container(max-width:650px){.arcade-challenge-grid{grid-template-columns:1fr;gap:8px;margin:8px 0}.arcade-challenge{min-height:54px}.arcade-intro-actions{gap:8px}}

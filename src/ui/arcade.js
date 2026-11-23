@@ -3,9 +3,12 @@ export const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&a
 const button=(text,action,cls='')=>`<button class="${cls}" data-action="${action}">${text}</button>`;
 /** Botão/card de um desafio. `status` aparece abaixo do título; bloqueado = desabilitado. */
 const challengeButton=(id,label,{locked=false,status=''}={})=>`<button class="arcade-challenge ${locked?'':'primary arcade-primary'}" data-action="beginInfinite" data-challenge="${id}"${locked?' disabled':''}><span class="arcade-challenge-title">${label}</span>${status?`<span class="arcade-challenge-status">${status}</span>`:''}</button>`;
+const lockIcon='<svg class="arcade-challenge-lock" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Zm2 0h6V7a3 3 0 0 0-6 0Z"/></svg>';
+/** Requisito de desbloqueio: vencer o desafio anterior (com a meta dele, quando configurado). */
+const challengeRequirement=(id,previous)=>`${lockIcon}Bloqueado (Vença o D${id-1})${previous?`<span class="arcade-challenge-req">Requisito: Nível ${previous.targetLevel} + ${previous.targetScore} pts no D${id-1}</span>`:''}`;
 /** Texto do card: meta do desafio (com recorde, se houver) ou o requisito de desbloqueio. */
-const challengeStatus=(id,{unlocked,best},challenge)=>{
- if(!unlocked.includes(id))return `Bloqueado (Vença o D${id-1})`;
+const challengeStatus=(id,{unlocked,best},challenge,previous)=>{
+ if(!unlocked.includes(id))return challengeRequirement(id,previous);
  if(!challenge)return '';
  const goal=`Meta: Nível ${challenge.targetLevel} + ${challenge.targetScore} pts`;
  return best[id]?`${goal} · Recorde ${best[id]}`:goal;
@@ -13,7 +16,12 @@ const challengeStatus=(id,{unlocked,best},challenge)=>{
 const heartPath='M12 21s-9-5.6-9-12a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6.4-9 12-9 12Z';
 export const hearts=lives=>`<span class="hearts" role="img" aria-label="${lives} de 3 vidas">${[0,1,2].map(i=>`<svg class="heart ${i<lives?'alive':'lost'}" viewBox="0 0 24 24" aria-hidden="true"><path d="${heartPath}"/></svg>`).join('')}</span>`;
 export function arcadeIntroHTML(entries, nickname, challengeProgress={unlocked:[1],best:{}}, challenges={}){
- const card=(id,label)=>challengeButton(id,label,{locked:!challengeProgress.unlocked.includes(id),status:challengeStatus(id,challengeProgress,challenges[id])});
+ const card=(id,label)=>{
+  const unlocked=challengeProgress.unlocked.includes(id);
+  // Liberado no progresso, mas ainda não registrado em CHALLENGES: card desativado até existir.
+  if(unlocked&&id>1&&!challenges[id])return challengeButton(id,label,{locked:true,status:'Liberado · Em breve'});
+  return challengeButton(id,label,{locked:!unlocked,status:challengeStatus(id,challengeProgress,challenges[id],challenges[id-1])});
+ };
  const best=entries[0];
  return `<section class="panel wide arcade-intro"><div class="arcade-badge">DESAFIO INFINITO · 3 DESAFIOS</div><h2>Desafios Progressivos</h2><p class="arcade-tagline">Supere os 3 desafios progressivos de triagem!</p><div class="arcade-intro-grid"><div><p>A esteira não para. Separe os materiais, construa combos e avance por desafios cada vez mais exigentes.</p><ul class="arcade-rules"><li>3 vidas por desafio. Erro ou item válido perdido: uma vida a menos.</li><li>Acertos: 10 pontos; combo 3: 20 pontos; combo 10: 30 pontos.</li><li>A cada 10 acertos você sobe de nível até a meta do desafio.</li></ul><p class="note">Não há relógio global. Itens com RESTOS precisam de preparação [E]. Vença um desafio para desbloquear o próximo. O ranking fica apenas neste navegador.</p></div><div class="arcade-record"><small>RECORDE PESSOAL</small><strong>${best?.score??0}</strong><span>Melhor sequência: ${Math.max(0,...entries.map(e=>e.maxStreak))}</span><span>${best?'Onda '+best.wave+' · '+escapeHTML(best.nickname):'Sua primeira marca começa aqui'}</span></div></div><label class="nickname-label" for="nickname">Seu apelido <input id="nickname" type="text" maxlength="15" autocomplete="off" placeholder="Jogador" aria-describedby="nickname-help nickname-error" aria-invalid="false" value="${escapeHTML(nickname==='Jogador'?'':nickname)}"><small id="nickname-help">Até 15 caracteres</small><span id="nickname-error" class="nickname-error" role="status" aria-live="polite" hidden></span></label><div class="arcade-challenge-grid" aria-label="Desafios progressivos">${card(1,'Desafio 1 • Iniciante')}${card(2,'Desafio 2 • Normal')}${card(3,'Desafio 3 • Avançado')}</div><div class="actions arcade-intro-actions">${button('Ver ranking','leaderboard')}${button('Voltar','menu')}</div></section>`;
 }
