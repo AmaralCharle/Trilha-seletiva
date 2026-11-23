@@ -6,9 +6,11 @@ import {Session,buildDeck} from './systems/session.js';
 import {loadProgress,saveAttempt,saveSettings,resetProgress,exportCSV} from './systems/storage.js';
 import {ecoPoseSVG,itemSVG,binBodySVG,svgURL} from './ui/art.js';
 import {ResultFlow} from './systems/ResultFlow.js';
-import {InfiniteSession} from './systems/infiniteSession.js';
+import {InfiniteSession,ChallengeSession} from './systems/infiniteSession.js';
+import {CHALLENGES,getChallenge} from './config/infinite.js';
+import {loadChallengeProgress,unlockChallenge,saveChallengeScore} from './systems/challengeProgress.js';
 import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname,isNicknameTaken} from './systems/leaderboard.js';
-import {escapeHTML,hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML} from './ui/arcade.js';
+import {escapeHTML,hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML,challengeResultHTML} from './ui/arcade.js';
 import {needsLandscape,isCompactLandscape} from './systems/mobile.js';
 import './styles.css';
 const ui=document.querySelector('#ui');let progress=loadProgress(),session,currentLevel,review=false,screen='menu',mapReturnScreen='menu',reviewReturnScreen='menu',statsReturnScreen='menu',leaderboardReturnScreen='menu',showWasteCatalogGuide=false,nickname='Jogador',bestBefore=0,recordShown=false,seenWave=1;
@@ -41,9 +43,10 @@ function updateHUD(s){
  const selected=document.querySelector('#selected-item');if(selected)selected.textContent=scene().selected?.item.name||'Toque em um resíduo';
  const setValue=(id,value,animate=false)=>{const el=document.querySelector('#'+id);if(!el)return;const next=String(value);if(el.textContent!==next){el.textContent=next;if(animate){el.classList.remove('value-pop');void el.offsetWidth;el.classList.add('value-pop');}}};
  setValue('score',s.score,true);setValue('streak',s.streak+(s.streak>=3?' · '+(s.infinite?s.multiplier:2)+'×':''),true);
+ if(s.challenge){updateChallengeHUD(s);return;}
  if(s.infinite){
   setValue('count',s.resolvedCount);setValue('wave',`Onda ${s.wave} · ${s.difficulty.name}`);
-  const lives=document.querySelector('#lives');if(lives.dataset.value!==String(s.lives)){lives.dataset.value=s.lives;lives.innerHTML=hearts(s.lives);lives.classList.remove('life-pulse');void lives.offsetWidth;lives.classList.add('life-pulse');}
+  updateLives(s);
   document.querySelector('#progress-bar').style.width=(s.resolvedCount%10*10)+'%';
   document.querySelector('#wave-goal').textContent=`${10-s.resolvedCount%10} ITENS PARA A PRÓXIMA ONDA`;
   if(s.wave!==seenWave){seenWave=s.wave;fx('wave');scene().audio?.setIntensity(s.wave);waveBanner(`ONDA ${s.wave} · ${s.difficulty.name}`);feedback(true,'Nova onda! Observe os materiais e mantenha seu ritmo.','guide');}
@@ -64,6 +67,7 @@ function finish(result){
   defeat:ended.infinite||!result.pass,
   onStart:()=>{
    if(ended.infinite)completedRanking=saveInfiniteResult(result,nickname);
+   if(ended.challenge)saveChallengeScore(ended.challenge.id,result.score);
    else if(!ended.tutorial)progress=saveAttempt(result);
    scene().audio?.playMusic(ended.infinite||!result.pass?'gameover':'victory');
    if(!ended.infinite&&result.pass&&!review&&!ended.tutorial&&currentLevel.id<5)fx('unlock');
@@ -85,9 +89,9 @@ function finishCampaign(result){
 function stats(final=false){statsReturnScreen=screen==='map'?'map':'menu';screen='stats';idleScene();progress=loadProgress();const h=progress.history,first=h[0],last=h.at(-1),errors={};h.forEach(r=>Object.entries(r.errorsByItem||{}).forEach(([id,n])=>errors[id]=(errors[id]||0)+n));const difficulties=Object.entries(errors).sort((a,b)=>b[1]-a[1]).slice(0,5);render(`<section class="panel wide ${final?'journey-complete':'stats-panel'}">${final?medal():''}<div class="eyebrow">${final?'JORNADA CONCLUÍDA':'SEU PROGRESSO FICA NESTE NAVEGADOR'}</div><h2>${final?'Missão cumprida, agente da mudança!':'Aprender também é olhar para o caminho.'}</h2>${final?'<p class="final-message">Cinco etapas. Muitos novos destinos. Leve esse cuidado para a sua cidade.</p>':''}<div class="result-grid"><div><strong>${h.length}</strong><small>tentativas</small></div><div><strong>${first?Math.round(first.precision*100)+'%':'—'}</strong><small>primeira tentativa</small></div><div><strong>${last?Math.round(last.precision*100)+'%':'—'}</strong><small>última tentativa</small></div><div><strong>${Object.values(progress.stars).reduce((a,b)=>a+b,0)}/15</strong><small>estrelas</small></div></div><p>Para revisar: ${difficulties.length?difficulties.map(([id,n])=>`${CATALOG.find(i=>i.id===id)?.name||id} (${n})`).join(' · '):'nenhum erro registrado ainda.'}</p><div class="comparison"><table><thead><tr><th>Etapa</th><th>Primeira</th><th>Última</th><th>Erros antes / agora</th><th>Domínio</th></tr></thead><tbody>${[1,2,3,4,5,'review'].map(id=>{const attempts=h.filter(r=>id==='review'?r.review:!r.review&&r.level===id),a=attempts[0],b=attempts.at(-1);return `<tr><td>${id==='review'?'Revisão':id}</td><td>${a?Math.round(a.precision*100)+'%':'—'}</td><td>${b?Math.round(b.precision*100)+'%':'—'}</td><td>${a?(a.wrong+a.missed)+' / '+(b.wrong+b.missed):'—'}</td><td>${b?(b.precision===1?'Consolidado':b.pass?'Em prática':'Revisar'):'A descobrir'}</td></tr>`;}).join('')}</tbody></table></div><div class="history">${h.slice(-6).reverse().map(r=>`<div><span>${r.review?'Revisão':'Etapa '+r.level}</span><b>${Math.round(r.precision*100)}% de precisão</b><span>${r.wrong+r.missed} erros · ${r.errorsPerMinute.toFixed(1)} / min</span></div>`).join('')}</div><p class="note">Comparações são descritivas; fases diferentes têm dificuldades diferentes. Melhora de aprendizagem depende de teste externo.</p><div class="actions">${button('Exportar CSV','export','primary')}${button('Revisar meus erros','review')}${button('Minha trilha','map')}${button('Voltar','statsBack')}</div></section>`);}
 function settings(){screen='settings';idleScene();render(`<section class="panel audio-settings"><h2>Do seu jeito</h2><p>Sete trilhas originais, uma para cada fase, revisão e desafio. Sons começam após sua interação.</p><label for="music-volume">Música <input id="music-volume" type="range" min="0" max="1" step="0.01" value="${progress.settings.musicVolume}"><output id="music-value">${Math.round(progress.settings.musicVolume*100)}%</output></label><label for="effects-volume">Efeitos <input id="effects-volume" type="range" min="0" max="1" step="0.01" value="${progress.settings.effectsVolume}"><output id="effects-value">${Math.round(progress.settings.effectsVolume*100)}%</output></label><div class="actions">${button(progress.settings.sound?'Desligar sons':'Ligar sons','sound')}${button('Ouvir amostra','sampleMusic')}${button('Voltar','menu','primary')}</div><hr><p>Recomeçar apaga estrelas e histórico da campanha neste navegador. O ranking local permanece separado.</p><div class="actions">${button('Repetir tutorial','tutorial')}${button('Reiniciar Trilha','reset','danger')}</div></section>`);}
 function credits(){screen='credits';idleScene();render(`<section class="panel"><h2>Feito para transformar</h2><p>Trilha Seletiva · Missão Reciclagem<br>Desafio P2 · Desenvolvimento de Jogos Digitais</p><p>Reconstrução em Phaser 3.90, JavaScript e Vite com assistência de IA (Codex/OpenAI). Cenário, robô e ilustrações vetoriais originais gerados em código. Sete músicas de modo, duas vinhetas de resultado e doze efeitos originais sintetizados em arquivos locais, com fonte reprodutível em tools/generate-audio.mjs. Sem downloads durante a partida.</p><p>Conteúdo: orientações oficiais de coleta seletiva de Vinhedo, USP e referências registradas em docs/CREDITOS.md. Classificação simplificada: a aceitação varia entre municípios.</p><p>Integrantes e matrículas: pendentes de preenchimento pelo grupo.</p>${button('Voltar à missão','menu','primary')}</section>`);}
-function dialog(title,text,actions){document.querySelector('#modal')?.remove();const el=document.createElement('div');el.id='modal';el.className='modal';el.innerHTML=`<section class="panel" role="dialog" aria-modal="true" aria-label="${title}"><h2>${title}</h2><p>${text}</p><div class="actions">${actions.map(([t,a])=>button(t,a,a==='resume'?'primary':'')).join('')}</div></section>`;ui.append(el);el.querySelector('button').focus();}
+function dialog(title,text,actions){document.querySelector('#modal')?.remove();const el=document.createElement('div');el.id='modal';el.className='modal';el.innerHTML=`<section class="panel" role="dialog" aria-modal="true" aria-label="${title}"><h2>${title}</h2><p>${text}</p><div class="actions">${actions.map(([t,a,cls])=>button(t,a,cls??(a==='resume'?'primary':''))).join('')}</div></section>`;ui.append(el);el.querySelector('button').focus();}
 function pause(){if(screen!=='play'||session.paused)return;scene().cancelDrag();session.paused=true;scene().audio?.pause();scene().tweens.pauseAll();dialog('Uma pausa para respirar','A esteira e o relógio estão parados. Sua missão espera por você.',[['Continuar','resume'],[session.infinite?'Reiniciar desafio':'Reiniciar fase','restart'],[session.infinite||review||session.tutorial?'Voltar':'Voltar à trilha','abandon'],[progress.settings.sound?'Desligar sons':'Ligar sons','pauseSound'],...(document.fullscreenEnabled?[[document.fullscreenElement?'Sair da tela cheia':'Tela cheia','fullscreen']]:[])]);}
-function resume(){if(needsLandscape(window.innerWidth,window.innerHeight)){toast('Gire o aparelho para continuar a missão.');return;}document.querySelector('#modal')?.remove();if(session){session.paused=false;scene().tweens.resumeAll();scene().audio?.resume();}}
+function resume(){if(needsLandscape(window.innerWidth,window.innerHeight)){toast('Gire o aparelho para continuar a missão.');return;}document.querySelector('#modal')?.remove();if(session){session.paused=false;scene().tweens.resumeAll();scene().audio?.resume();if(session.won)showNextChallengeButton();}}
 function validateNickname(input=document.querySelector('#nickname')){
  if(!input)return !isNicknameTaken(nickname);
  const taken=isNicknameTaken(input.value);
@@ -98,7 +102,10 @@ function validateNickname(input=document.querySelector('#nickname')){
  if(begin)begin.disabled=taken;
  return !taken;
 }
-function infiniteIntro(){screen='arcade';session=null;idleScene();const rank=loadLeaderboard();render(arcadeIntroHTML(rank.entries,nickname));validateNickname();if(rank.notice)toast(rank.notice);}
+function infiniteIntro(){screen='arcade';session=null;idleScene();const rank=loadLeaderboard();render(arcadeIntroHTML(rank.entries,nickname,loadChallengeProgress(),CHALLENGES));validateNickname();if(rank.notice)toast(rank.notice);}
+function arcadeHUD({challengeId,tag,title,countLabel,goal,message}){
+ return `<section class="hud infinite-hud" data-challenge-id="${challengeId}"><div><small>${tag}</small><h2 id="wave">${title}</h2></div><div class="hud-stats"><div><small>PONTOS</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="streak">0</strong></div><div><small>${countLabel}</small><strong id="count">0</strong></div><div><small>VIDAS</small><span id="lives" data-value="3">${hearts(3)}</span></div>${button('Pausar','pause')}</div></section><div class="mission"><span id="wave-goal">${goal}</span><div><i id="progress-bar"></i></div></div><div id="wave-banner" role="status" aria-live="polite"></div><div class="coach">${eco('guide')}<div><b>ECO · CENTRAL DE TRIAGEM</b><p id="feedback">${message}</p></div></div><div class="bottom-controls"><strong id="selected-item" aria-live="polite">Toque em um resíduo</strong><span><kbd>1–5</kbd> separar · <kbd>Tab</kbd> selecionar · <kbd>Esc</kbd> pausar</span>${button('Retirar restos','prepare','small')}${button('Repetir dica','hint','small')}</div>`;
+}
 function startInfinite(challengeId=1){
  const input=document.querySelector('#nickname');
  const chosenNickname=normalizeNickname(input?.value??nickname);
@@ -107,14 +114,72 @@ function startInfinite(challengeId=1){
   else infiniteIntro();
   return;
  }
+ const challenge=getChallenge(challengeId);
+ if(challenge&&!loadChallengeProgress().unlocked.includes(challengeId)){infiniteIntro();return;}
  resultFlow.cancel();nickname=chosenNickname;
  progress=loadProgress();bestBefore=loadLeaderboard().entries[0]?.score??0;recordShown=false;seenWave=1;
- session=new InfiniteSession(CATALOG,{challengeId});currentLevel=null;review=false;screen='play';
- render(`<section class="hud infinite-hud" data-challenge-id="${challengeId}"><div><small>DESAFIO INFINITO</small><h2 id="wave">Onda 1 · Iniciante</h2></div><div class="hud-stats"><div><small>PONTOS</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="streak">0</strong></div><div><small>RESOLVIDOS</small><strong id="count">0</strong></div><div><small>VIDAS</small><span id="lives" data-value="3">${hearts(3)}</span></div>${button('Pausar','pause')}</div></section><div class="mission"><span id="wave-goal">10 ITENS PARA A PRÓXIMA ONDA</span><div><i id="progress-bar"></i></div></div><div id="wave-banner" role="status" aria-live="polite"></div><div class="coach">${eco('guide')}<div><b>ECO · CENTRAL DE TRIAGEM</b><p id="feedback">Três vidas, cinco destinos. Vamos construir sua melhor sequência!</p></div></div><div class="bottom-controls"><strong id="selected-item" aria-live="polite">Toque em um resíduo</strong><span><kbd>1–5</kbd> separar · <kbd>Tab</kbd> selecionar · <kbd>Esc</kbd> pausar</span>${button('Retirar restos','prepare','small')}${button('Repetir dica','hint','small')}</div>`);
+ currentLevel=null;review=false;screen='play';
+ if(challenge){
+  session=new ChallengeSession(challenge,CATALOG);
+  render(arcadeHUD({challengeId,tag:`${challenge.title} · ${challenge.subtitle}`.toUpperCase(),title:session.difficulty.name,countLabel:'ACERTOS',goal:challengeGoalText(session),message:`${session.difficulty.name}: ${session.difficulty.categories.map(c=>names[c]).join(' e ')} na esteira. As ${challenge.bins.length} lixeiras já estão prontas!`}));
+ }else{
+  session=new InfiniteSession(CATALOG,{challengeId});
+  render(arcadeHUD({challengeId,tag:'DESAFIO INFINITO',title:'Onda 1 · Iniciante',countLabel:'RESOLVIDOS',goal:'10 ITENS PARA A PRÓXIMA ONDA',message:'Três vidas, cinco destinos. Vamos construir sua melhor sequência!'}));
+ }
  scene().start(session,updateHUD,finish,feedback);beginMusic('infinite');syncViewport();
+}
+function challengeGoalText(s){
+ if(s.won)return 'DESAFIO VENCIDO · CONTINUE PONTUANDO';
+ if(s.wave<s.maxLevel)return `${s.correctToNextLevel} ACERTOS PARA O NÍVEL ${s.wave+1}`;
+ return `META: ${Math.min(s.score,s.challenge.targetScore)} / ${s.challenge.targetScore} PONTOS`;
+}
+function updateLives(s){
+ const lives=document.querySelector('#lives');
+ if(!lives||lives.dataset.value===String(s.lives))return;
+ lives.dataset.value=s.lives;lives.innerHTML=hearts(s.lives);lives.classList.remove('life-pulse');void lives.offsetWidth;lives.classList.add('life-pulse');
+}
+function updateChallengeHUD(s){
+ const setText=(id,value)=>{const el=document.querySelector('#'+id);if(el&&el.textContent!==String(value))el.textContent=value;};
+ setText('count',s.correct);setText('wave',s.difficulty.name);setText('wave-goal',challengeGoalText(s));updateLives(s);
+ const bar=document.querySelector('#progress-bar');
+ if(bar)bar.style.width=(s.wave<s.maxLevel?(s.correct%10)*10:Math.min(100,s.score/s.challenge.targetScore*100))+'%';
+ if(s.wave!==seenWave){
+  const added=s.difficulty.categories.filter(c=>!s.challenge.levels[seenWave-1]?.categories.includes(c));
+  seenWave=s.wave;fx('wave');scene().audio?.setIntensity(s.wave);waveBanner(`NÍVEL ${s.wave}`);
+  feedback(true,added.length?`Novo material na esteira: ${added.map(c=>names[c]).join(', ')}!`:'Novo nível! A esteira ficou mais rápida.','guide');
+ }
+ if(!recordShown&&bestBefore>0&&s.score>bestBefore){recordShown=true;fx('record');waveBanner('NOVO RECORDE!');}
+ if(s.takeVictory())challengeVictory(s);
+}
+/** Vitória: libera o próximo desafio, salva o recorde e oferece Próximo desafio / Continuar. */
+function challengeVictory(s){
+ const next=s.challenge.next;
+ if(next)unlockChallenge(next);
+ saveChallengeScore(s.challenge.id,s.score);
+ scene().cancelDrag();scene().tweens.pauseAll();fx('unlock');waveBanner('DESAFIO VENCIDO!');
+ dialog(`${s.challenge.title} vencido!`,`Você chegou ao Nível ${s.challenge.targetLevel} com ${s.score} pontos.${next?` O Desafio ${next} foi liberado.`:''} Quer seguir para o próximo ou continuar acumulando pontos neste nível?`,[...(next?[['Próximo desafio','nextChallenge','primary arcade-primary']]:[]),['Continuar','continueChallenge']]);
+}
+/** Botão fixo no canto inferior direito para avançar quando quiser após Continuar. */
+function showNextChallengeButton(){
+ if(!session?.challenge?.next||ui.querySelector('.next-challenge-fab'))return;
+ ui.insertAdjacentHTML('beforeend',button('Próximo desafio','nextChallenge','primary arcade-primary next-challenge-fab'));
+}
+/** Encerra a sessão atual (guardando o recorde) e inicia imediatamente o desafio seguinte. */
+function nextChallenge(){
+ const next=session?.challenge?.next;
+ if(!next)return;
+ if(!session.finished){saveChallengeScore(session.challenge.id,session.score);session.finish('abort');}
+ document.querySelector('#modal')?.remove();
+ startInfinite(next);
 }
 function finishInfinite(result){
  const ranking=completedRanking;screen='arcade-result';
+ const challenge=session?.challenge;
+ if(challenge){
+  render(challengeResultHTML(result,challenge,ranking,{nextUnlocked:!!challenge.next&&loadChallengeProgress().unlocked.includes(challenge.next)}));
+  if(ranking.notice)toast(ranking.notice);
+  return;
+ }
  render(arcadeResultHTML(result,ranking,ranking.newRecord?medal():eco('error')));if(ranking.notice)toast(ranking.notice);
 }
 function leaderboard(){if(screen!=='leaderboard')leaderboardReturnScreen=screen==='arcade'?'arcade':'menu';screen='leaderboard';session=null;idleScene();const ranking=loadLeaderboard();render(leaderboardHTML(ranking.entries));if(ranking.notice)toast(ranking.notice);}
@@ -122,6 +187,7 @@ const actions={
  skipResult:()=>resultFlow.skip(),menu:()=>{if(screen==='play'){pause();return;}menu();},mapBack:()=>mapReturnScreen==='help'?help(showWasteCatalogGuide):menu(),play:()=>progress.history.length?map():help(false),map,help:()=>help(true),
  tutorial:()=>start(1,false,true),level1:()=>start(1),retry:()=>start(currentLevel.id,review,session.tutorial),next:()=>start(currentLevel.id+1),review:()=>{reviewReturnScreen=screen;start(1,true);},stats:()=>stats(),statsBack:()=>statsReturnScreen==='map'?map():menu(),final:()=>stats(true),credits,settings,pause,resume,
  infinite:infiniteIntro,beginInfinite:startInfinite,retryInfinite:()=>startInfinite(session?.challengeId??1),leaderboard,leaderboardBack:()=>leaderboardReturnScreen==='arcade'?infiniteIntro():menu(),
+ continueChallenge:()=>resume(),nextChallenge,
  restart:()=>session.infinite?startInfinite(session.challengeId??1):start(currentLevel.id,review,session.tutorial),
  abandon:()=>{const arcade=session?.infinite,reviewSession=review,tutorialSession=session?.tutorial;session?.finish('abort');session=null;if(arcade)infiniteIntro();else if(reviewSession)returnToReviewOrigin();else if(tutorialSession)help(false);else map();},
  prepare:()=>scene().prepare(),hint:()=>feedback(true,'Arraste para a lixeira com o nome do material. Se houver RESTOS, use Retirar restos primeiro. Vidro não inclui espelho ou cerâmica. Consulte as regras locais.','guide'),

@@ -1,5 +1,7 @@
 export const LEADERBOARD_KEY = 'trilha-seletiva-infinite-v1';
 const LIMIT = 10;
+/** O Desafio Infinito e os desafios progressivos compartilham o ranking local. */
+const RANKED_MODES = Object.freeze(['infinite', 'challenge']);
 let fallback = [];
 let notice = '';
 let memoryOnly = false;
@@ -64,7 +66,7 @@ function persist(entries) {
 }
 
 function entryFromResult(result, nickname) {
-  if (!result || result.mode !== 'infinite' || result.reason !== 'lives' || result.lives !== 0 || result.wrong + result.missed !== 3) return null;
+  if (!result || !RANKED_MODES.includes(result.mode) || result.reason !== 'lives' || result.lives !== 0 || result.wrong + result.missed !== 3) return null;
   const entry = {
     id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${++sequence}-${Math.random().toString(36).slice(2, 12)}`,
     nickname: normalizeNickname(nickname), score: result.score, wave: result.wave,

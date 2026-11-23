@@ -36,3 +36,60 @@ export function getDifficulty(wave = 1) {
     minSpacing: INFINITE_CONFIG.minSpacing,
   };
 }
+
+/* ───────────── Modo Desafios ───────────── */
+
+/** Regras compartilhadas pelos 3 desafios (vidas, avanço de nível e pontuação vêm do arcade). */
+export const CHALLENGE_RULES = Object.freeze({
+  lives: INFINITE_CONFIG.lives,
+  correctPerLevel: 10,
+  maxActive: INFINITE_CONFIG.maxActive,
+  minSpacing: INFINITE_CONFIG.minSpacing,
+});
+
+const ALL_BINS = INFINITE_CONFIG.categories;
+
+/** Desafio 1 (Iniciante): 5 lixeiras sempre visíveis; os materiais entram nível a nível. */
+const CHALLENGE_1 = Object.freeze({
+  id: 1,
+  title: 'Desafio 1',
+  subtitle: 'Iniciante',
+  description: 'As 5 lixeiras ficam na tela desde o início; um novo material entra na esteira a cada nível.',
+  bins: ALL_BINS,
+  targetLevel: 4,
+  targetScore: 350,
+  next: 2,
+  levels: Object.freeze([
+    Object.freeze({ speed: 80, interval: 2.5, categories: Object.freeze(['paper', 'plastic']), trickyFraction: 0, prepFraction: 0 }),
+    Object.freeze({ speed: 85, interval: 2.4, categories: Object.freeze(['paper', 'plastic', 'glass']), trickyFraction: 0, prepFraction: 0 }),
+    Object.freeze({ speed: 90, interval: 2.3, categories: Object.freeze(['paper', 'plastic', 'glass', 'metal']), trickyFraction: 0.2, prepFraction: 0.1 }),
+    Object.freeze({ speed: 95, interval: 2.2, categories: ALL_BINS, trickyFraction: 0.25, prepFraction: 0.15 }),
+  ]),
+});
+
+/** Registro dos desafios. Desafios 2 e 3 entram aqui com o mesmo formato. */
+export const CHALLENGES = Object.freeze({ 1: CHALLENGE_1 });
+
+export function getChallenge(id) {
+  return CHALLENGES[id] ?? null;
+}
+
+/** Dificuldade de um nível do desafio, limitada ao intervalo 1..último nível. */
+export function getChallengeLevel(challenge, level = 1) {
+  const total = challenge.levels.length;
+  const number = Number.isFinite(level) ? Math.min(total, Math.max(1, Math.floor(level))) : 1;
+  const step = challenge.levels[number - 1];
+  return {
+    wave: number,
+    level: number,
+    name: `Nível ${number}${number === total ? ' (final)' : ''}`,
+    speed: step.speed,
+    interval: step.interval,
+    categories: [...step.categories],
+    bins: [...(step.bins ?? challenge.bins)],
+    trickyFraction: step.trickyFraction,
+    prepFraction: step.prepFraction,
+    maxActive: CHALLENGE_RULES.maxActive,
+    minSpacing: CHALLENGE_RULES.minSpacing,
+  };
+}
