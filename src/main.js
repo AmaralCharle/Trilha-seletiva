@@ -8,7 +8,7 @@ import {ecoPoseSVG,itemSVG,binBodySVG,svgURL} from './ui/art.js';
 import {ResultFlow} from './systems/ResultFlow.js';
 import {InfiniteSession,ChallengeSession} from './systems/infiniteSession.js';
 import {CHALLENGES,getChallenge} from './config/infinite.js';
-import {loadChallengeProgress,unlockChallenge,saveChallengeScore} from './systems/challengeProgress.js';
+import {loadChallengeProgress,registerChallengeVictory,saveChallengeScore} from './systems/challengeProgress.js';
 import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname,isNicknameTaken} from './systems/leaderboard.js';
 import {escapeHTML,hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML,challengeResultHTML} from './ui/arcade.js';
 import {needsLandscape,isCompactLandscape} from './systems/mobile.js';
@@ -121,13 +121,17 @@ function startInfinite(challengeId=1){
  currentLevel=null;review=false;screen='play';
  if(challenge){
   session=new ChallengeSession(challenge,CATALOG);
-  render(arcadeHUD({challengeId,tag:`${challenge.title} · ${challenge.subtitle}`.toUpperCase(),title:session.difficulty.name,countLabel:'ACERTOS',goal:challengeGoalText(session),message:`${session.difficulty.name}: ${session.difficulty.categories.map(c=>names[c]).join(' e ')} na esteira. As ${challenge.bins.length} lixeiras já estão prontas!`}));
+  render(arcadeHUD({challengeId,tag:`${challenge.title} · ${challenge.subtitle}`.toUpperCase(),title:session.difficulty.name,countLabel:'ACERTOS',goal:challengeGoalText(session),message:`${session.difficulty.name}: ${listNames(session.difficulty.categories)} na esteira. As ${challenge.bins.length} lixeiras já estão prontas!`}));
  }else{
   session=new InfiniteSession(CATALOG,{challengeId});
   render(arcadeHUD({challengeId,tag:'DESAFIO INFINITO',title:'Onda 1 · Iniciante',countLabel:'RESOLVIDOS',goal:'10 ITENS PARA A PRÓXIMA ONDA',message:'Três vidas, cinco destinos. Vamos construir sua melhor sequência!'}));
  }
  scene().start(session,updateHUD,finish,feedback);beginMusic('infinite');syncViewport();
 }
+/** "Papel, Plástico e Vidro" a partir das categorias. */
+const listNames=categories=>{const list=categories.map(c=>names[c]);return list.length>1?`${list.slice(0,-1).join(', ')} e ${list.at(-1)}`:list.join('');};
+/** Próximo desafio só é jogável quando já está registrado em CHALLENGES (o D3 chega depois). */
+const playableNext=challenge=>challenge?.next&&getChallenge(challenge.next)?challenge.next:null;
 function challengeGoalText(s){
  if(s.won)return 'DESAFIO VENCIDO · CONTINUE PONTUANDO';
  if(s.wave<s.maxLevel)return `${s.correctToNextLevel} ACERTOS PARA O NÍVEL ${s.wave+1}`;
@@ -146,27 +150,28 @@ function updateChallengeHUD(s){
  if(s.wave!==seenWave){
   const added=s.difficulty.categories.filter(c=>!s.challenge.levels[seenWave-1]?.categories.includes(c));
   seenWave=s.wave;fx('wave');scene().audio?.setIntensity(s.wave);waveBanner(`NÍVEL ${s.wave}`);
-  feedback(true,added.length?`Novo material na esteira: ${added.map(c=>names[c]).join(', ')}!`:'Novo nível! A esteira ficou mais rápida.','guide');
+  feedback(true,added.length?`Novo material na esteira: ${added.map(c=>names[c]).join(', ')}!`:`Novo nível! A esteira ficou ${s.difficulty.speedBoost?s.difficulty.speedBoost+'% ':''}mais rápida.`,'guide');
  }
  if(!recordShown&&bestBefore>0&&s.score>bestBefore){recordShown=true;fx('record');waveBanner('NOVO RECORDE!');}
  if(s.takeVictory())challengeVictory(s);
 }
 /** Vitória: libera o próximo desafio, salva o recorde e oferece Próximo desafio / Continuar. */
 function challengeVictory(s){
- const next=s.challenge.next;
- if(next)unlockChallenge(next);
- saveChallengeScore(s.challenge.id,s.score);
+ const next=s.challenge.next,playable=playableNext(s.challenge);
+ registerChallengeVictory(s.challenge,s.score);
  scene().cancelDrag();scene().tweens.pauseAll();fx('unlock');waveBanner('DESAFIO VENCIDO!');
- dialog(`${s.challenge.title} vencido!`,`Você chegou ao Nível ${s.challenge.targetLevel} com ${s.score} pontos.${next?` O Desafio ${next} foi liberado.`:''} Quer seguir para o próximo ou continuar acumulando pontos neste nível?`,[...(next?[['Próximo desafio','nextChallenge','primary arcade-primary']]:[]),['Continuar','continueChallenge']]);
+ const unlocked=next?` O Desafio ${next} foi liberado${playable?'':' e chega em breve'}.`:'';
+ const question=playable?'Quer seguir para o próximo ou continuar acumulando pontos neste nível?':'Continue acumulando pontos neste nível.';
+ dialog(`${s.challenge.title} vencido!`,`Você chegou ao Nível ${s.challenge.targetLevel} com ${s.score} pontos.${unlocked} ${question}`,[...(playable?[['Próximo desafio','nextChallenge','primary arcade-primary']]:[]),['Continuar','continueChallenge']]);
 }
 /** Botão fixo no canto inferior direito para avançar quando quiser após Continuar. */
 function showNextChallengeButton(){
- if(!session?.challenge?.next||ui.querySelector('.next-challenge-fab'))return;
+ if(!playableNext(session?.challenge)||ui.querySelector('.next-challenge-fab'))return;
  ui.insertAdjacentHTML('beforeend',button('Próximo desafio','nextChallenge','primary arcade-primary next-challenge-fab'));
 }
 /** Encerra a sessão atual (guardando o recorde) e inicia imediatamente o desafio seguinte. */
 function nextChallenge(){
- const next=session?.challenge?.next;
+ const next=playableNext(session?.challenge);
  if(!next)return;
  if(!session.finished){saveChallengeScore(session.challenge.id,session.score);session.finish('abort');}
  document.querySelector('#modal')?.remove();
@@ -176,7 +181,7 @@ function finishInfinite(result){
  const ranking=completedRanking;screen='arcade-result';
  const challenge=session?.challenge;
  if(challenge){
-  render(challengeResultHTML(result,challenge,ranking,{nextUnlocked:!!challenge.next&&loadChallengeProgress().unlocked.includes(challenge.next)}));
+  render(challengeResultHTML(result,challenge,ranking,{nextUnlocked:!!playableNext(challenge)&&loadChallengeProgress().unlocked.includes(challenge.next)}));
   if(ranking.notice)toast(ranking.notice);
   return;
  }

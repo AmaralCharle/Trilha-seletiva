@@ -58,6 +58,12 @@ export function saveChallengeScore(id, score) {
   return persist({ ...progress, best: { ...progress.best, [id]: score } });
 }
 
+/** Vitória de um desafio: libera o próximo (quando houver) e guarda o recorde, num único passo. */
+export function registerChallengeVictory(challenge, score) {
+  if (challenge?.next) unlockChallenge(challenge.next);
+  return saveChallengeScore(challenge?.id, score);
+}
+
 export function resetChallengeProgress() {
   notice = '';
   memoryOnly = false;
