@@ -148,43 +148,6 @@ Vitória: Nível 4 **e** 350 pontos. A partida pausa, libera o Desafio 2 e ofere
 
 > ⚠️ A definir: intervalos de surgimento e frações de itens confundíveis/com restos por nível não constam da especificação; os valores acima são a escolha inicial da implementação.
 
-### Desafios Progressivos — Desafio 2 (Normal)
-
-O botão **Desafio 2 • Normal** começa bloqueado, com cadeado e o requisito "Bloqueado (Vença o D1) · Requisito: Nível 4 + 350 pts no D1". Ele é liberado ao vencer o Desafio 1 e passa a mostrar a meta e o recorde. As regras de vidas, combo e avanço de nível (10 acertos) são as mesmas do Desafio 1. As 5 lixeiras e os 27 resíduos, incluindo os confundíveis e os itens com restos, estão ativos desde o Nível 1, com uma esteira esquerda → direita.
-
-A velocidade cresce 15% por nível de forma composta, arredondada para baixo (`percentSpeed(95, 15, nível)`):
-
-| Nível | Resíduos na esteira | Velocidade | Intervalo |
-|---|---|---|---|
-| 1 | Todos os 27 | 95 px/s | 2,2 s |
-| 2 | Todos os 27 | 109 px/s (+15%) | 2,0 s |
-| 3 | Todos os 27 | 125 px/s (+15%) | 1,8 s |
-| 4 (final) | Todos os 27 | 144 px/s (+15%) | 1,6 s |
-
-Itens confundíveis: 30%; itens com restos: 25%, fixos nos 4 níveis. Vitória: Nível 4 **e** 500 pontos. A partida pausa, libera o Desafio 3 e oferece **Próximo desafio** ou **Continuar**. Enquanto o Desafio 3 não estiver registrado em `CHALLENGES`, o modal mostra só **Continuar** ("O Desafio 3 foi liberado e chega em breve"), o botão fixo não aparece e o card do Desafio 3 fica desativado como "Liberado · Em breve".
-
-> ⚠️ A definir: intervalos e frações de itens confundíveis/com restos não constam da especificação; os valores acima são a escolha inicial da implementação.
-
-### Desafios Progressivos — Desafio 3 (Avançado, final)
-
-O botão **Desafio 3 • Avançado** começa bloqueado ("Bloqueado (Vença o D2) · Requisito: Nível 4 + 500 pts no D2") e é liberado ao vencer o Desafio 2. Todos os 27 resíduos aparecem desde o Nível 1, mas as lixeiras entram **uma a uma**, na ordem Papel → Plástico → Vidro → Metal → Rejeito. A fileira de lixeiras é recriada ao subir de nível (a nova lixeira surge com fade-in) e as teclas 1–5 seguem a ordem da fileira.
-
-| Nível | Lixeiras ativas | Velocidade | Intervalo |
-|---|---|---|---|
-| 1 | Papel | 125 px/s | 1,9 s |
-| 2 | + Plástico | 130 px/s | 1,8 s |
-| 3 | + Vidro | 135 px/s | 1,7 s |
-| 4 | + Metal | 140 px/s | 1,6 s |
-| 5 (final) | + Rejeito (5 lixeiras) | 145 px/s | 1,5 s |
-
-**Esteira dupla cruzada.** A esteira superior leva os resíduos da esquerda para a direita; a inferior, da direita para a esquerda, em altura separada. Os resíduos se alternam entre as faixas (a próxima vai para a faixa com menos itens) e aparecem em escala reduzida (72%) para caber. Arraste, seleção, Retirar restos (E) e a detecção de saída funcionam nas duas bordas.
-
-**Penalidade.** O jogador perde 1 vida ao jogar em lixeira errada, ao descartar item com restos sem preparar ou ao deixar sair da esteira um item cuja lixeira **já está ativa**. Itens cuja lixeira ainda não entrou na cena devem passar direto: isso não custa vida, não zera o combo, não conta para o avanço de nível nem para a precisão. Jogar um desses itens em uma lixeira ativa continua sendo erro. A regra vale pelo nível no momento em que o item sai da esteira.
-
-**Vitória final.** Nível 5 **e** 650 pontos: a partida encerra e mostra "Parabéns, você venceu os 3 desafios!" com o botão **Voltar ao menu principal** (sem Próximo desafio nem Continuar). A vitória entra no ranking local mesmo com vidas sobrando.
-
-> ⚠️ A definir: intervalos, frações de itens confundíveis (30–40%) e com restos (20–30%) e a escala dos resíduos não constam da especificação. Para o jogador não passar o Nível 1 só deixando itens passarem, no máximo 50% dos sorteios vêm de lixeiras ainda ausentes (`inactiveShare`: 50/50/40/20/0%); os 27 resíduos continuam possíveis em todos os níveis.
-
 ### Apresentação dos resultados na versão 3.1
 
 O domínio conclui a sessão uma única vez. ResultFlow salva em onStart e protege a apresentação contra duplicatas. A derrota congela geração e interação, reduz a iluminação, reage nas pequenas luzes e mostra Eco com expressão de erro. A introdução dura 1,75 s, pode ser pulada e conduz a um painel persistente. Navegar ou reiniciar cancela callbacks antigos. Game Over usa música original de 6,4 s sem loop; vitória usa vinheta própria. As vozes musicais são trocadas em sequência, sem simultaneidade.

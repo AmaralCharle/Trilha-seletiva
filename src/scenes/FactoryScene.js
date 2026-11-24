@@ -7,8 +7,6 @@ import {AudioManager,preloadAudio} from '../systems/AudioManager.js';
 import {dragPosition,findDropBin,renderResolution,gameViewport} from '../systems/mobile.js';
 
 const BIN_NAMES={paper:'PAPEL',plastic:'PLÁSTICO',glass:'VIDRO',metal:'METAL',reject:'REJEITO'};
-/** Esteira dupla (Desafio 3): faixa 0 = superior (esq → dir), faixa 1 = inferior (dir → esq). */
-export const DUAL_BELT=Object.freeze({scale:.72,laneY:Object.freeze([290,412]),singleY:350,entryX:92,exitX:1195,mirror:1280});
 const COLORS={paper:0x428ac9,plastic:0xd96557,glass:0x4e9d73,metal:0xd6a73f,reject:0x84918b};
 
 export class FactoryScene extends Phaser.Scene {
@@ -39,7 +37,7 @@ export class FactoryScene extends Phaser.Scene {
     this.input.on('dragstart',(p,obj)=>{
       if(this.mode!=='play'||this.session?.paused||this.dragged)return;
       this.dragged=obj;this.dragPointer=p.id;
-      this.selected=obj;obj.dragging=true;obj.setScale(obj.baseScale*1.06);this.audio.playEffect('drag');obj.setDepth(12);
+      this.selected=obj;obj.dragging=true;obj.setScale(1.06);this.audio.playEffect('drag');obj.setDepth(12);
     });
     this.input.on('drag',(p,obj,x,y)=>{
       if(this.mode==='play'&&!this.session.paused&&this.dragged===obj&&this.dragPointer===p.id){
@@ -55,12 +53,12 @@ export class FactoryScene extends Phaser.Scene {
     this.input.on('dragend',(p,obj)=>{
       if(this.dragged!==obj||this.dragPointer!==p.id)return;
       this.dragged=null;this.dragPointer=null;this.binZones.forEach(b=>b.hover.setVisible(false));
-      obj.setScale(obj.baseScale);obj.dragging=false;obj.setDepth(5);
+      obj.setScale(1);obj.dragging=false;obj.setDepth(5);
       if(this.mode!=='play'||this.session.paused||!this.activeItems.includes(obj))return;
       const point=this.cameras.main.getWorldPoint(p.x,p.y);
       const bin=findDropBin(this.binZones,point.x,point.y);
       if(bin)this.classify(bin.category,obj);
-      else this.placeOnBelt(obj);
+      else {obj.x=obj.beltX;obj.y=350;}
     });
     this.input.keyboard.on('keydown',e=>{
       if(this.mode!=='play'||this.session.paused)return;
@@ -82,7 +80,7 @@ export class FactoryScene extends Phaser.Scene {
   }
 
   layoutViewport(width,height,compact){
-    const layout=gameViewport(width,height,compact,!!this.dual);
+    const layout=gameViewport(width,height,compact);
     this.cameras.main.setViewport(0,0,layout.width,layout.height)
       .setZoom(layout.zoom).centerOn(layout.centerX,layout.centerY);
     this.cameras.main.setBackgroundColor(compact?'#89a98c':'#102f35');
@@ -92,8 +90,7 @@ export class FactoryScene extends Phaser.Scene {
   showMenu(){
     this.cancelDrag();
     this.clearShutdown();this.tweens.resumeAll();this.mode='menu';this.clearItems();this.clearEffects();
-    this.dual=false;this.environment.setDualBelt(false);
-    this.binLayer.removeAll(true);this.binZones=[];this.environment.showHero(true);this.marker.clear();
+    this.binLayer.removeAll(true);this.environment.showHero(true);this.marker.clear();
   }
 
   start(session,onUpdate,onFinish,onFeedback){
@@ -103,35 +100,8 @@ export class FactoryScene extends Phaser.Scene {
     this.onUpdate=onUpdate;this.onFinish=onFinish;this.onFeedback=onFeedback;
     this.spawned=0;this.spawnClock=0;this.selected=null;
     this.binLayer.removeAll(true);this.binZones=[];
-    this.dual=!!session.challenge?.dualBelt;this.environment.setDualBelt(this.dual);
-    this.buildBins(session.level.categories,false);
+    session.level.categories.forEach((category,i)=>this.createBin(category,i,session.level.categories.length));
     this.spawn();
-  }
-
-  /** Recria as lixeiras da cena; as que acabaram de entrar surgem com um fade-in. */
-  buildBins(categories,animate){
-    const known=new Set((this.binZones??[]).map(b=>b.category));
-    this.binLayer.removeAll(true);this.binZones=[];
-    categories.forEach((category,i)=>{
-      const bin=this.createBin(category,i,categories.length);
-      if(animate&&!known.has(category)&&!this.environment.reduced){
-        bin.parts.forEach(part=>part.setAlpha(0));
-        this.tweens.add({targets:bin.parts,alpha:1,duration:420,ease:'Sine.out'});
-      }
-    });
-  }
-
-  /** Lixeiras liberadas por nível (Desafio 3): reconstrói a fileira quando o conjunto muda. */
-  syncBins(){
-    const wanted=this.session?.level?.categories;
-    if(this.mode!=='play'||!wanted||!this.binZones)return;
-    if(this.binZones.length===wanted.length&&this.binZones.every((b,i)=>b.category===wanted[i]))return;
-    this.buildBins(wanted,true);
-  }
-
-  /** Posição de um resíduo a partir do avanço `beltX`; a faixa inferior corre espelhada. */
-  placeOnBelt(o){
-    o.x=o.lane===1?DUAL_BELT.mirror-o.beltX:o.beltX;o.y=o.laneY;
   }
 
   createBin(category,index,count){
@@ -147,14 +117,12 @@ export class FactoryScene extends Phaser.Scene {
     zone.on('pointerout',()=>hover.setVisible(false));
     zone.on('pointerdown',()=>{if(!this.dragged)this.classify(category);});
     this.binLayer.add([shadow,body,lid,label,key,hover,zone]);
-    const bin={category,rect:new Phaser.Geom.Rectangle(x-96,y-36,192,174),x,y,body,lid,hover,parts:[shadow,body,lid,label,key]};
-    this.binZones.push(bin);
-    return bin;
+    this.binZones.push({category,rect:new Phaser.Geom.Rectangle(x-96,y-36,192,174),x,y,body,lid,hover});
   }
 
   cancelDrag(){
     const obj=this.dragged;
-    if(obj?.active){obj.dragging=false;obj.setScale(obj.baseScale).setDepth(5);this.placeOnBelt(obj);}
+    if(obj?.active){obj.dragging=false;obj.setScale(1).setDepth(5).setPosition(obj.beltX,350);}
     this.dragged=null;this.dragPointer=null;
     this.binZones?.forEach(b=>b.hover.setVisible(false));
   }
@@ -192,8 +160,7 @@ export class FactoryScene extends Phaser.Scene {
     let uid,item;
     if(this.session.infinite){item=this.session.nextItem();if(!item)return;uid=item.uid;}
     else{if(this.spawned>=this.session.deck.length)return;uid=this.spawned++;item=this.session.deck[uid];}
-    const lane=item.lane??0,dual=this.dual;
-    const o=this.add.container(lane===1?DUAL_BELT.mirror-DUAL_BELT.entryX:DUAL_BELT.entryX,dual?DUAL_BELT.laneY[lane]:DUAL_BELT.singleY);
+    const o=this.add.container(92,350);
     const plate=this.add.graphics();
     plate.fillStyle(0x315440,.14).fillRoundedRect(-63,-48,128,119,18);
     plate.fillStyle(0xfff8e5,.97).fillRoundedRect(-63,-56,126,118,16);
@@ -208,8 +175,7 @@ export class FactoryScene extends Phaser.Scene {
     }
     o.setDepth(5);o.setSize(146,138).setInteractive({useHandCursor:true});this.input.setDraggable(o);
     o.on('pointerdown',()=>{if(this.mode!=='play'||this.session.paused||this.dragged)return;this.selected=o;this.audio.playEffect('select');});
-    o.lane=lane;o.laneY=dual?DUAL_BELT.laneY[lane]:DUAL_BELT.singleY;o.baseScale=dual?DUAL_BELT.scale:1;o.setScale(o.baseScale);
-    o.uid=uid;o.item=item;o.born=this.session.elapsed;o.beltX=DUAL_BELT.entryX;
+    o.uid=uid;o.item=item;o.born=this.session.elapsed;o.beltX=92;
     this.activeItems.push(o);if(!this.selected)this.selected=o;
   }
 
@@ -259,7 +225,6 @@ export class FactoryScene extends Phaser.Scene {
   }
 
   checkEnd(){
-    this.syncBins();
     this.onUpdate(this.session);
     if(this.session.finished&&this.mode==='play'){
       this.mode='result';this.marker.clear();this.clearItems();this.onFinish(this.session.result);
@@ -273,31 +238,28 @@ export class FactoryScene extends Phaser.Scene {
     this.session.tick(dt);if(this.session.finished){this.checkEnd();return;}
     this.spawnClock+=dt;
     const maxActive=this.session.infinite?this.session.difficulty.maxActive:(this.session.review?1:6);
-    const lane=this.session.nextLane??0;
-    const room=!this.session.infinite||this.activeItems.filter(o=>o.lane===lane).every(o=>o.beltX-DUAL_BELT.entryX>=this.session.difficulty.minSpacing);
+    const room=!this.session.infinite||this.activeItems.every(o=>o.beltX-92>=this.session.difficulty.minSpacing);
     if(this.spawnClock>=this.session.level.interval&&this.activeItems.length<maxActive&&room){
       this.spawnClock=0;this.spawn();
     }
     for(const o of [...this.activeItems]){
       o.beltX+=this.session.review?0:this.session.level.speed*dt;
-      if(!o.dragging){this.placeOnBelt(o);
+      if(!o.dragging){o.x=o.beltX;o.y=350;
         if(!this.environment.reduced&&!this.session.review){o.sprite.y=-14+Math.sin(this.environment.clock*4+o.uid)*1.4;o.sprite.angle=Math.sin(this.environment.clock*2+o.uid)*.8;}
       }
       o.shadow.setScale(o.dragging?.82:1);o.shadow.alpha=o.dragging?.25:.14;
-      if(o.beltX>DUAL_BELT.exitX){
+      if(o.beltX>1195){
         if(this.dragged===o)this.cancelDrag();
-        const r=this.session.miss(o.uid,o.item);this.activeItems=this.activeItems.filter(x=>x!==o);
+        this.session.miss(o.uid,o.item);this.activeItems=this.activeItems.filter(x=>x!==o);
         if(this.selected===o)this.selected=this.activeItems[0];o.destroy();
-        if(r.reason==='passed')this.onFeedback(true,`${o.item.name} ainda não tem lixeira neste nível. Deixar passar está certo!`,'guide');
-        else{this.audio.playEffect('wrong');this.onFeedback(false,'Item perdido. Escolha o próximo com calma.');}
+        this.audio.playEffect('wrong');this.onFeedback(false,'Item perdido. Escolha o próximo com calma.');
         if(this.session.finished){this.checkEnd();return;}
       }
     }
     this.marker.clear();
     if(this.selected){
-      const k=this.selected.baseScale??1;
-      this.marker.lineStyle(5,0xfff2b0,.9).strokeRoundedRect(this.selected.x-67*k,this.selected.y-60*k,134*k,126*k,19*k);
-      this.marker.lineStyle(2,0x367d5e,1).strokeRoundedRect(this.selected.x-69*k,this.selected.y-62*k,138*k,130*k,20*k);
+      this.marker.lineStyle(5,0xfff2b0,.9).strokeRoundedRect(this.selected.x-67,this.selected.y-60,134,126,19);
+      this.marker.lineStyle(2,0x367d5e,1).strokeRoundedRect(this.selected.x-69,this.selected.y-62,138,130,20);
     }
     this.checkEnd();
   }
