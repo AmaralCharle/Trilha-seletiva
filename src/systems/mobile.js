@@ -21,10 +21,12 @@ export function renderResolution(ratio = 1) {
 export function isCompactLandscape(width,height) {
   return width > height && height <= 540 && width / height >= 1.4;
 }
-export function gameViewport(width,height,compact=false) {
+export function gameViewport(width,height,compact=false,dual=false) {
   if(!compact)return {width:1280,height:720,zoom:1,centerX:640,centerY:360,scrollX:0,scrollY:0};
-  // Entire belt, RESTOS badges and generous bin zones: y=260..700.
-  const zoom=Math.min(width/1280,height/440);
-  return {width,height,zoom,centerX:640,centerY:480,
-    scrollX:640-width/(2*zoom),scrollY:480-height/(2*zoom)};
+  // Esteira simples: toda a esteira, RESTOS e zonas das lixeiras ficam em y=260..700.
+  // Esteira dupla (Desafio 3): a faixa superior sobe o recorte para y=220..700.
+  const top=dual?220:260,span=700-top,centerY=(top+700)/2;
+  const zoom=Math.min(width/1280,height/span);
+  return {width,height,zoom,centerX:640,centerY,
+    scrollX:640-width/(2*zoom),scrollY:centerY-height/(2*zoom)};
 }
