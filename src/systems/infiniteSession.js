@@ -32,9 +32,12 @@ export class InfiniteSession {
     Object.assign(this.level, { speed: this.difficulty.speed, interval: this.difficulty.interval });
   }
 
+  /** Categorias elegíveis para o próximo resíduo sorteado. */
+  itemCategories() { return this.difficulty.categories ?? this.level.categories; }
+
   nextItem() {
     if (this.paused || this.finished || this.pending.size >= INFINITE_CONFIG.maxActive) return null;
-    const source = this.generator.next({ categories: this.difficulty.categories ?? this.level.categories, trickyFraction: this.difficulty.trickyFraction, prepFraction: this.difficulty.prepFraction });
+    const source = this.generator.next({ categories: this.itemCategories(), trickyFraction: this.difficulty.trickyFraction, prepFraction: this.difficulty.prepFraction });
     if (!source) return null;
     const item = { ...source, uid: this.nextUid++ };
     this.pending.set(item.uid, item);
@@ -91,7 +94,7 @@ export class InfiniteSession {
 
   finish(reason = 'lives') {
     if (this.finished) return this.result;
-    if (reason !== 'abort' && this.lives > 0) return null;
+    if (reason !== 'abort' && reason !== 'victory' && this.lives > 0) return null;
     this.finished = true;
     this.result = {
       mode: 'infinite', score: this.score, wave: this.wave, maxStreak: this.maxStreak,
@@ -118,6 +121,8 @@ export class ChallengeSession extends InfiniteSession {
     this.challenge = challenge;
     this.won = false;
     this.victoryPending = false;
+    this.passed = 0;
+    this.lastLane = 1;
     this.level = { id: `challenge-${challenge.id}`, title: `${challenge.title} · ${challenge.subtitle}`, categories: [...challenge.bins] };
     this.applyDifficulty();
   }
@@ -132,6 +137,54 @@ export class ChallengeSession extends InfiniteSession {
     if (!this.challenge) return super.applyDifficulty();
     this.difficulty = getChallengeLevel(this.challenge, this.wave);
     Object.assign(this.level, { speed: this.difficulty.speed, interval: this.difficulty.interval, categories: this.difficulty.bins });
+  }
+
+  /** Lixeiras que estão na cena no nível atual. */
+  get activeBins() { return this.difficulty.bins; }
+
+  /** Resíduo cuja lixeira ainda não entrou na cena (só existe no desafio com lixeiras progressivas). */
+  isInactive(item) { return !!item && !this.activeBins.includes(item.category); }
+
+  /** Faixa do próximo resíduo: 0 = esteira superior (esq → dir), 1 = inferior (dir → esq). */
+  get nextLane() {
+    if (!this.challenge?.dualBelt) return 0;
+    const count = lane => [...this.pending.values()].filter(item => item.lane === lane).length;
+    const [top, bottom] = [count(0), count(1)];
+    return top === bottom ? 1 - this.lastLane : top < bottom ? 0 : 1;
+  }
+
+  /**
+   * Parte dos sorteios vem de lixeiras ainda ausentes (`inactiveShare`); os 27 resíduos continuam
+   * possíveis em qualquer nível, mas o jogador não passa o nível inteiro só deixando itens passarem.
+   */
+  itemCategories() {
+    const { categories, bins, inactiveShare = 0 } = this.difficulty;
+    if (!this.challenge || !inactiveShare) return categories;
+    const absent = categories.filter(c => !bins.includes(c));
+    if (!absent.length) return categories;
+    return this.generator.rng() < inactiveShare ? absent : bins;
+  }
+
+  nextItem() {
+    const lane = this.nextLane;
+    const item = super.nextItem();
+    if (!item) return null;
+    item.lane = lane;
+    this.lastLane = lane;
+    return item;
+  }
+
+  /**
+   * Item que saiu pela borda. Se a lixeira dele ainda não está ativa, passar é o comportamento
+   * correto: sem perda de vida, sem zerar o combo e sem contar para o avanço de nível.
+   */
+  miss(uid, item) {
+    if (this.canResolve(uid) && this.isInactive(this.pending.get(uid))) {
+      this.pending.delete(uid);
+      this.passed++;
+      return { ok: true, reason: 'passed', points: 0, waveChanged: false };
+    }
+    return super.miss(uid, item);
   }
 
   completeDecision() {
@@ -149,6 +202,8 @@ export class ChallengeSession extends InfiniteSession {
     if (this.won || this.finished) return false;
     if (this.wave < this.challenge.targetLevel || this.score < this.challenge.targetScore) return false;
     this.won = true;
+    // Último desafio: a partida encerra de vez (sem Continuar nem Próximo desafio).
+    if (this.challenge.final) { this.finish('victory'); return true; }
     this.victoryPending = true;
     this.paused = true;
     return true;
@@ -164,7 +219,7 @@ export class ChallengeSession extends InfiniteSession {
   finish(reason = 'lives') {
     const result = super.finish(reason);
     if (!result || result.mode === 'challenge') return result;
-    this.result = { ...result, mode: 'challenge', challengeId: this.challenge.id, level: this.wave, won: this.won };
+    this.result = { ...result, mode: 'challenge', challengeId: this.challenge.id, level: this.wave, won: this.won, passed: this.passed };
     return this.result;
   }
 }
