@@ -99,8 +99,43 @@ const CHALLENGE_2 = Object.freeze({
   }))),
 });
 
-/** Registro dos desafios. O Desafio 3 entra aqui com o mesmo formato. */
-export const CHALLENGES = Object.freeze({ 1: CHALLENGE_1, 2: CHALLENGE_2 });
+/**
+ * Desafio 3 (Avançado — final): esteira dupla cruzada, os 27 resíduos desde o Nível 1 e lixeiras
+ * liberadas uma a uma (Papel → Plástico → Vidro → Metal → Rejeito). Resíduos cuja lixeira ainda não
+ * entrou na cena devem passar pela esteira sem penalidade. `inactiveShare` é a fração dos itens
+ * sorteados que pertencem a lixeiras ainda ausentes (limitada a 50% para não arrastar o ritmo).
+ */
+const CHALLENGE_3_SPEEDS = Object.freeze([125, 130, 135, 140, 145]);
+const CHALLENGE_3_INTERVALS = Object.freeze([1.9, 1.8, 1.7, 1.6, 1.5]);
+const CHALLENGE_3_TRICKY = Object.freeze([0.3, 0.3, 0.35, 0.35, 0.4]);
+const CHALLENGE_3_PREP = Object.freeze([0.2, 0.25, 0.25, 0.3, 0.3]);
+const CHALLENGE_3 = Object.freeze({
+  id: 3,
+  title: 'Desafio 3',
+  subtitle: 'Avançado',
+  description: 'Duas esteiras cruzadas e os 27 resíduos desde o início; as lixeiras entram uma a uma a cada nível.',
+  bins: ALL_BINS,
+  targetLevel: 5,
+  targetScore: 650,
+  next: null,
+  final: true,
+  dualBelt: true,
+  levels: Object.freeze(CHALLENGE_3_SPEEDS.map((speed, index) => {
+    const bins = Object.freeze(ALL_BINS.slice(0, index + 1));
+    return Object.freeze({
+      speed,
+      interval: CHALLENGE_3_INTERVALS[index],
+      categories: ALL_BINS,
+      bins,
+      inactiveShare: Math.min(0.5, (ALL_BINS.length - bins.length) / ALL_BINS.length),
+      trickyFraction: CHALLENGE_3_TRICKY[index],
+      prepFraction: CHALLENGE_3_PREP[index],
+    });
+  })),
+});
+
+/** Registro dos desafios. */
+export const CHALLENGES = Object.freeze({ 1: CHALLENGE_1, 2: CHALLENGE_2, 3: CHALLENGE_3 });
 
 export function getChallenge(id) {
   return CHALLENGES[id] ?? null;
@@ -122,6 +157,7 @@ export function getChallengeLevel(challenge, level = 1) {
     interval: step.interval,
     categories: [...step.categories],
     bins: [...(step.bins ?? challenge.bins)],
+    inactiveShare: step.inactiveShare ?? 0,
     trickyFraction: step.trickyFraction,
     prepFraction: step.prepFraction,
     maxActive: CHALLENGE_RULES.maxActive,
