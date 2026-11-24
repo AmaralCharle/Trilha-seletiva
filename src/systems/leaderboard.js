@@ -66,7 +66,11 @@ function persist(entries) {
 }
 
 function entryFromResult(result, nickname) {
-  if (!result || !RANKED_MODES.includes(result.mode) || result.reason !== 'lives' || result.lives !== 0 || result.wrong + result.missed !== 3) return null;
+  if (!result || !RANKED_MODES.includes(result.mode)) return null;
+  const lost = result.reason === 'lives' && result.lives === 0 && result.wrong + result.missed === 3;
+  // Vitória final do Desafio 3: a partida acaba com vidas sobrando, e cada vida perdida veio de um erro ou item perdido.
+  const won = result.reason === 'victory' && result.won === true && result.lives > 0 && result.lives <= 3 && result.wrong + result.missed === 3 - result.lives;
+  if (!lost && !won) return null;
   const entry = {
     id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${++sequence}-${Math.random().toString(36).slice(2, 12)}`,
     nickname: normalizeNickname(nickname), score: result.score, wave: result.wave,
