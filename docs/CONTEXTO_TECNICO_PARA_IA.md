@@ -200,9 +200,19 @@ O catálogo tem 27 IDs (seis papel, cinco plástico, três vidro, cinco metal, o
 - `CHALLENGES[2]` em `src/config/infinite.js`: 4 níveis com as 5 lixeiras e as 5 categorias, `targetLevel: 4`, `targetScore: 500`, `next: 3`. A velocidade vem de `percentSpeed(base, percent, nível)` (composto, `Math.floor`): 95/109/125/144 px/s. Intervalos 2,2/2,0/1,8/1,6 s; `trickyFraction` 0,3 e `prepFraction` 0,25.
 - `getChallengeLevel` devolve também `speedBoost` (% em relação ao nível anterior, 0 no Nível 1), usado na mensagem de troca de nível quando nenhum material novo entra.
 - `registerChallengeVictory(challenge, score)` (`challengeProgress.js`) libera `challenge.next` e salva o recorde; `challengeVictory` em `main.js` usa essa função.
-- `playableNext(challenge)` em `main.js`: o próximo desafio só é oferecido (modal, botão fixo, tela de fim) se já estiver registrado em `CHALLENGES`. O progresso libera o Desafio 3 mesmo assim; quando ele for registrado, o fluxo passa a funcionar sem outras mudanças.
+- `playableNext(challenge)` em `main.js`: o próximo desafio só é oferecido (modal, botão fixo, tela de fim) se já estiver registrado em `CHALLENGES`. Com o Desafio 3 registrado, o Desafio 2 já oferece Próximo desafio; o Desafio 3 não tem `next`, então não oferece nada.
 - Card: bloqueado mostra cadeado + `Bloqueado (Vença o D{n-1})` + requisito do desafio anterior; liberado mas sem registro mostra "Liberado · Em breve" desativado.
 - Testes em `tests/challenge2.test.js`.
+
+## Desafios Progressivos (Desafio 3)
+
+- `CHALLENGES[3]` em `src/config/infinite.js`: 5 níveis, `targetLevel: 5`, `targetScore: 650`, `next: null`, `final: true`, `dualBelt: true`. Cada nível tem `bins` (1 a 5 lixeiras, prefixo de Papel/Plástico/Vidro/Metal/Rejeito) e `categories` com as 5 categorias (os 27 resíduos). Velocidades 125/130/135/140/145; intervalos 1,9→1,5 s; `inactiveShare` por nível (0,5/0,5/0,4/0,2/0), exposto por `getChallengeLevel`.
+- `ChallengeSession` (`src/systems/infiniteSession.js`): `activeBins`, `isInactive(item)`, `nextLane` (0 = superior esq → dir, 1 = inferior dir → esq; escolhe a faixa com menos itens e alterna no empate), `itemCategories()` (aplica `inactiveShare`) e `miss()` sobrescrito: item sem lixeira ativa vira `{ok:true, reason:'passed'}` e só incrementa `passed` (sem vida, sem zerar combo, fora de `resolvedCount`). `level.categories` segue `difficulty.bins`, então a cena enxerga 1 a 5 lixeiras.
+- Vitória final: `checkVictory` chama `finish('victory')` quando `challenge.final`; `InfiniteSession.finish` aceita o motivo `'victory'` com vidas sobrando. O resultado traz `reason: 'victory'`, `won: true` e `passed`.
+- `leaderboard.js`: `entryFromResult` aceita também a vitória final (`reason: 'victory'`, `lives > 0` e `wrong + missed === 3 - lives`).
+- `FactoryScene.js`: `DUAL_BELT` (escala 0,72; faixas em y=290 e y=412; espelho x → 1280 − x para a faixa inferior), `buildBins`/`syncBins` (recria a fileira quando `level.categories` muda), `placeOnBelt`, espaçamento mínimo por faixa e feedback "ainda não tem lixeira" ao passar. `FactoryEnvironment.setDualBelt` liga a esteira superior desenhada em código e inverte os chevrons da original. `gameViewport(w, h, compact, dual)` amplia o recorte compacto para y=220..700.
+- `main.js`: `finish()` não mostra a animação de derrota quando `reason === 'victory'`; `finishInfinite` renderiza `finalVictoryHTML` (`src/ui/arcade.js`) com a mensagem exata e só o botão "Voltar ao menu principal" (`data-action="menu"`).
+- Testes em `tests/challenge3.test.js`.
 
 ## Cena, controles e identidade visual
 
