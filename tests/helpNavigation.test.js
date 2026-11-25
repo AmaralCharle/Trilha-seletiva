@@ -486,6 +486,59 @@ describe('screen navigation', () => {
     expect(setItem).not.toHaveBeenCalled();
   });
 
+  it('pressing Enter for an existing nickname prevents default and opens the recorded challenge confirmation', async () => {
+    memory.set('trilha-seletiva-infinite-v1', JSON.stringify({
+      version: 1,
+      entries: [{
+        id: 'existing-entry',
+        nickname: 'Equipe',
+        challengeId: 2,
+        score: 10,
+        wave: 1,
+        maxStreak: 1,
+        correct: 1,
+        wrong: 0,
+        missed: 0,
+        total: 1,
+        precision: 1,
+        date: '2026-11-20T00:00:00.000Z',
+      }],
+    }));
+    const nicknameInput = { id: 'nickname', value: '  eQuIpE  ' };
+    const documentObject = globalThis.document;
+    const querySelector = documentObject.querySelector.bind(documentObject);
+    documentObject.querySelector = selector => selector === '#nickname' ? nicknameInput : querySelector(selector);
+
+    await import('../src/main.js');
+    clickAction('infinite');
+    const event = { key: 'Enter', target: nicknameInput, preventDefault: vi.fn() };
+    window.listeners.keydown(event);
+
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    expect(modal.innerHTML).toContain('Deseja reiniciar o desafio 2?');
+    expect(modal.innerHTML).toContain('data-action="confirmNicknameRestart">SIM</button>');
+    expect(modal.innerHTML).toContain('data-action="cancelNicknameRestart">NÃO</button>');
+    expect(ui.dataset.screen).toBe('arcade');
+  });
+
+  it('pressing Enter for a new nickname starts the default available challenge', async () => {
+    const nicknameInput = { id: 'nickname', value: '  Agente Novo  ' };
+    const documentObject = globalThis.document;
+    const querySelector = documentObject.querySelector.bind(documentObject);
+    documentObject.querySelector = selector => selector === '#nickname' ? nicknameInput : querySelector(selector);
+
+    await import('../src/main.js');
+    clickAction('infinite');
+    const event = { key: 'Enter', target: nicknameInput, preventDefault: vi.fn() };
+    window.listeners.keydown(event);
+
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    expect(ui.dataset.screen).toBe('play');
+    expect(ui.innerHTML).toContain('data-challenge-id="1"');
+    expect(ui.innerHTML).toContain('<h2 id="wave">Nível 1</h2>');
+    expect(modal).toBeNull();
+  });
+
   it('returns from ranking to the infinite intro without changing records', async () => {
     const rankingKey = 'trilha-seletiva-infinite-v1';
     const rankingSave = JSON.stringify({ version: 1, entries: [] });
