@@ -7,7 +7,7 @@ Trilha Seletiva — Missão Reciclagem é um serious game de triagem em uma cent
 | Dimensão e câmera | 2D, vista lateral da central de triagem |
 | Gênero | Simulação arcade educacional para um jogador |
 | Plataforma | Navegador desktop no Windows; mouse, teclado e toque |
-| Versão do jogo | 3.1.0 |
+| Versão do jogo | 3.3.0 |
 | Tecnologia | JavaScript ES Modules, Phaser 3.90.0, Vite 6.4.6 e Vitest 4.1.12 |
 | Código entregue | https://github.com/AmaralCharle/Trilha-seletiva ; projeto com fonte, assets e testes |
 | Integrantes e matrículas | Pendente de informação do grupo; máximo de cinco integrantes |
@@ -108,7 +108,7 @@ A vista lateral 2D mantém o foco no reconhecimento e no destino dos objetos. Ph
 
 ### Objetivos de curto médio e longo prazo
 
-Nos próximos segundos, classificar o objeto selecionado. Na fase, atingir a meta com todos os resíduos contabilizados. Na jornada, concluir os cinco níveis e revisar os resíduos que ainda geram erros.
+Nos próximos segundos, classificar o objeto selecionado. Na fase, atingir a meta com todos os resíduos contabilizados. Na jornada, concluir os cinco níveis e revisar os resíduos que ainda geram erros. No arcade, vencer os três Desafios Progressivos em sequência e melhorar o recorde de cada um.
 
 ### Vitória derrota e encerramento
 
@@ -127,15 +127,29 @@ A precisão usa acertos divididos pelo total previsto da tentativa, inclusive it
 | Resolução única | Uma identidade de resíduo só pode ser contabilizada uma vez |
 | Reinício | Cria nova tentativa; a tentativa abandonada não concede estrelas |
 
-### Desafio Infinito complementar
+### Arcade: Desafios Progressivos
 
-O arcade fica disponível desde o início, sem exigir conclusão da campanha. Começa com três vidas, 85 px/s, intervalo2,5 s e cinco categorias. Não possui relógio global nem lote final. Acerto vale10 pontos; a partir do terceiro seguido vale20 e a partir do décimo vale30. Erro, preparação incorreta ou objeto perdido custa uma vida e zera a sequência. Acerto não concede vida. A pontuação nunca fica negativa. O mesmo uid só pode ser resolvido uma vez.
+O botão **Desafio Infinito** do menu abre a tela "Desafios Progressivos", disponível desde o início, sem exigir conclusão da campanha. Ela reúne três desafios em sequência; cada um precisa ser vencido para liberar o próximo.
 
-A última vida encerra imediatamente a simulação. Pendentes restantes não descontam vidas e aparecem separadamente do total resolvido. A precisão é acertos/resolvidos, ou zero sem decisões. A tela GAME OVER informa pontuação, onda, acertos, erros, perdas, melhor combo, precisão e posição local quando houver. O jogador pode tentar novamente, abrir ranking ou retornar ao menu. O apelido tem até 15 caracteres, padrão Jogador. Dez registros locais são ordenados por pontos, combo, onda e data; limpar recordes exige confirmação e não altera a campanha. Abandono não entra no ranking.
+| Desafio | Acesso | Níveis | Velocidade | Lixeiras | Meta | Ao vencer |
+|---|---|---:|---|---|---|---|
+| 1 Iniciante | Liberado desde o início | 4 | 80 → 95 px/s | 5 desde o início | Nível 4 + 350 pts | Libera o D2; modal Próximo desafio / Continuar |
+| 2 Normal | Vencer o D1 | 4 | 95 → 144 px/s (+15% por nível) | 5 desde o início | Nível 4 + 500 pts | Libera o D3; modal Próximo desafio / Continuar |
+| 3 Avançado | Vencer o D2 | 5 | 125 → 145 px/s, esteira dupla | Uma nova por nível | Nível 5 + 650 pts | Tela final "Parabéns, você venceu os 3 desafios!" |
+
+**Regras comuns.** Cada desafio começa com três vidas, sem relógio global nem lote final. Acerto vale 10 pontos; a partir do terceiro seguido vale 20 e a partir do décimo vale 30. Erro, preparação incorreta ou objeto válido perdido custa uma vida e zera a sequência. Acerto não concede vida. A pontuação nunca fica negativa. O mesmo uid só pode ser resolvido uma vez. A cada **10 acertos** o jogador sobe um nível, até o último nível do desafio.
+
+**Vitória dos Desafios 1 e 2.** Ao atingir o último nível **e** a pontuação meta, a partida pausa, libera o desafio seguinte e oferece **Próximo desafio** (encerra a sessão e inicia o seguinte) ou **Continuar** (retoma no último nível para seguir pontuando, com um botão fixo **Próximo desafio** no canto inferior direito).
+
+**Fim por vidas.** A última vida encerra imediatamente a simulação. Pendentes restantes não descontam vidas e aparecem separadamente do total resolvido. A precisão é acertos/resolvidos, ou zero sem decisões. A tela de fim informa pontuação, nível alcançado, se a meta foi batida, acertos, erros, perdas, melhor combo, precisão e posição local quando houver. O jogador pode tentar novamente, ir ao próximo desafio (se já liberado), escolher outro desafio ou voltar ao menu.
+
+**Ranking e progresso.** O apelido tem até 15 caracteres, padrão Jogador, e não pode repetir um apelido já presente no ranking. Dez registros locais são ordenados por pontos, combo, nível/onda e data; limpar recordes exige confirmação e não altera a campanha. Abandono não entra no ranking. Desbloqueios e o recorde de cada desafio ficam na chave `trilha-seletiva-desafios-v1`, separada da campanha e do ranking.
+
+A progressão por ondas descrita na seção 7 continua no código como alternativa para um desafio não registrado, mas não é acessível pela interface enquanto os três desafios estiverem registrados.
 
 ### Desafios Progressivos — Desafio 1 (Iniciante)
 
-Na tela "Desafios Progressivos" (botão Desafio Infinito do menu), o botão **Desafio 1 • Iniciante** fica liberado desde o início e mostra a meta e o recorde. Usa as regras do arcade (3 vidas, 10/20/30 pontos por combo, erro/restos/item perdido custam uma vida e zeram o combo), mas o nível sobe a cada **10 acertos** e para no último nível. As 5 lixeiras aparecem desde o Nível 1, com uma esteira esquerda → direita.
+O botão **Desafio 1 • Iniciante** fica liberado desde o início e mostra a meta e o recorde. Segue as regras comuns do arcade. As 5 lixeiras aparecem desde o Nível 1, com uma esteira esquerda → direita, e os materiais entram na esteira nível a nível.
 
 | Nível | Resíduos na esteira | Velocidade | Intervalo |
 |---|---|---|---|
@@ -144,13 +158,13 @@ Na tela "Desafios Progressivos" (botão Desafio Infinito do menu), o botão **De
 | 3 | + Metal (entram confundíveis e itens com restos) | 90 px/s | 2,3 s |
 | 4 (final) | + Rejeito (os 27 itens) | 95 px/s | 2,2 s |
 
-Vitória: Nível 4 **e** 350 pontos. A partida pausa, libera o Desafio 2 e oferece **Próximo desafio** ou **Continuar**; ao continuar, um botão fixo **Próximo desafio** aparece no canto inferior direito. Os botões dos desafios são liberados pelo progresso salvo na chave `trilha-seletiva-desafios-v1`, que também guarda o recorde de cada desafio.
+Vitória: Nível 4 **e** 350 pontos, que libera o Desafio 2.
 
 > ⚠️ A definir: intervalos de surgimento e frações de itens confundíveis/com restos por nível não constam da especificação; os valores acima são a escolha inicial da implementação.
 
 ### Desafios Progressivos — Desafio 2 (Normal)
 
-O botão **Desafio 2 • Normal** começa bloqueado, com cadeado e o requisito "Bloqueado (Vença o D1) · Requisito: Nível 4 + 350 pts no D1". Ele é liberado ao vencer o Desafio 1 e passa a mostrar a meta e o recorde. As regras de vidas, combo e avanço de nível (10 acertos) são as mesmas do Desafio 1. As 5 lixeiras e os 27 resíduos, incluindo os confundíveis e os itens com restos, estão ativos desde o Nível 1, com uma esteira esquerda → direita.
+O botão **Desafio 2 • Normal** começa bloqueado, com cadeado e o requisito "Bloqueado (Vença o D1) · Requisito: Nível 4 + 350 pts no D1". Ele é liberado ao vencer o Desafio 1 e passa a mostrar a meta e o recorde. Segue as regras comuns do arcade. As 5 lixeiras e os 27 resíduos, incluindo os confundíveis e os itens com restos, estão ativos desde o Nível 1, com uma esteira esquerda → direita.
 
 A velocidade cresce 15% por nível de forma composta, arredondada para baixo (`percentSpeed(95, 15, nível)`):
 
@@ -161,7 +175,7 @@ A velocidade cresce 15% por nível de forma composta, arredondada para baixo (`p
 | 3 | Todos os 27 | 125 px/s (+15%) | 1,8 s |
 | 4 (final) | Todos os 27 | 144 px/s (+15%) | 1,6 s |
 
-Itens confundíveis: 30%; itens com restos: 25%, fixos nos 4 níveis. Vitória: Nível 4 **e** 500 pontos. A partida pausa, libera o Desafio 3 e oferece **Próximo desafio** ou **Continuar**. Enquanto o Desafio 3 não estiver registrado em `CHALLENGES`, o modal mostra só **Continuar** ("O Desafio 3 foi liberado e chega em breve"), o botão fixo não aparece e o card do Desafio 3 fica desativado como "Liberado · Em breve".
+Itens confundíveis: 30%; itens com restos: 25%, fixos nos 4 níveis. Vitória: Nível 4 **e** 500 pontos, que libera o Desafio 3.
 
 > ⚠️ A definir: intervalos e frações de itens confundíveis/com restos não constam da especificação; os valores acima são a escolha inicial da implementação.
 
@@ -212,6 +226,8 @@ Pontos comunicam consistência e não compram vantagens. Tempo organiza a duraç
 Os valores principais preservam a configuração original. A cena usa canvas lógico de 1280 × 720 e aproximadamente 1100 px de percurso útil, mais longo que a janela original de 960 px. Mantidas as velocidades, isso aumenta a tolerância antes de um item sair; não é uma comparação direta de dificuldade por velocidade isolada. A cena limita a seis itens simultâneos e suspende novas chegadas enquanto está cheia. O treino usa três itens a 45 px/s; a revisão não tem cronômetro e mantém um item parado por vez, sem perdas por borda. Essas escolhas favorecem reconhecimento e controle, mas ainda precisam de balanceamento com pessoas. O desbloqueio é sequencial: aprovação libera o nível seguinte, até o quinto. A revisão usa as dificuldades registradas e remove o limite de tempo e a perda por saída da esteira. Ela apresenta um item parado por vez para permitir reflexão. A última decisão errada ou perdida tem prioridade; uma resposta correta posterior reduz a prioridade daquele item, e a frequência histórica desempata. Essa mudança redistribui a prática sem comprovar domínio fora do jogo. Seu desempenho fica separado do desbloqueio da trilha.
 
 ### Ondas do arcade
+
+Esta progressão é a do modo infinito original. Hoje ela só seria usada para um desafio não registrado; a progressão jogável do arcade é a dos três Desafios Progressivos (seção 6).
 
 A cada dez resíduos resolvidos a onda cresce, incluindo erros e perdas. O limite é seis objetos simultâneos e150 px entre novas chegadas. A geração suspende chegadas quando não há espaço, evitando sobreposição impossível.
 
@@ -560,3 +576,7 @@ Figura B7. Volumes separados e silêncio geral, com preferências preservadas ap
 ## Pendências para a entrega acadêmica
 
 O grupo deve preencher integrantes e matrículas, confirmar prazo e destino da entrega, registrar pelo menos um teste externo, revisar a declaração de IA, gravar um vídeo de 1 a 3 minutos com link acessível e conferir os anexos. Essas pendências não impedem o uso do jogo, mas impedem declarar a entrega acadêmica totalmente concluída.
+
+---
+
+*Versão 3.3 — 2026-11-24*
