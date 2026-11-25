@@ -12,8 +12,11 @@ vi.mock('phaser', () => ({
           getScene: () => ({
             ready: false,
             showMenu() {},
-            start() {},
+            start(session, update, finish) {
+              if (globalThis.__arcadeCapture) Object.assign(globalThis.__arcadeCapture, { session, update, finish });
+            },
             cancelDrag() {},
+            presentDefeat(done) { done(); },
             tweens: { pauseAll() {}, resumeAll() {} },
             audio: {
               unlock() {},
@@ -22,6 +25,7 @@ vi.mock('phaser', () => ({
               setSettings() {},
               setIntensity() {},
               playMusic() {},
+              playEffect() {},
               pause() {},
             },
           }),
@@ -537,6 +541,64 @@ describe('screen navigation', () => {
     expect(ui.innerHTML).toContain('data-challenge-id="1"');
     expect(ui.innerHTML).toContain('<h2 id="wave">Nível 1</h2>');
     expect(modal).toBeNull();
+  });
+
+  it('advances to challenge two without confirmation and resumes challenge two after losing there', async () => {
+    memory.set('trilha-seletiva-infinite-v1', JSON.stringify({
+      version: 1,
+      entries: [{
+        id: 'existing-entry',
+        nickname: 'Equipe',
+        challengeId: 1,
+        score: 10,
+        wave: 1,
+        level: 1,
+        maxStreak: 1,
+        correct: 1,
+        wrong: 0,
+        missed: 2,
+        total: 3,
+        precision: 1 / 3,
+        date: '2026-11-20T00:00:00.000Z',
+      }],
+    }));
+    const nicknameInput = { id: 'nickname', value: 'Equipe' };
+    vi.stubGlobal('__arcadeCapture', {});
+    const documentObject = globalThis.document;
+    const querySelector = documentObject.querySelector.bind(documentObject);
+    documentObject.querySelector = selector => selector === '#nickname' ? nicknameInput : querySelector(selector);
+
+    await import('../src/main.js');
+    clickAction('infinite');
+    clickAction('beginInfinite', { challenge: '1' });
+    clickAction('confirmNicknameRestart');
+
+    globalThis.__arcadeCapture.session.victoryPending = true;
+    globalThis.__arcadeCapture.update(globalThis.__arcadeCapture.session);
+    expect(modal.innerHTML).toContain('data-action="nextChallenge">Próximo desafio</button>');
+
+    clickAction('nextChallenge');
+
+    expect(ui.dataset.screen).toBe('play');
+    expect(ui.innerHTML).toContain('data-challenge-id="2"');
+    expect(modal).toBeNull();
+    const ranking = await import('../src/systems/leaderboard.js');
+    expect(ranking.findNicknameProfile('eQuIpE').stoppedChallengeId).toBe(2);
+
+    const challengeTwo = globalThis.__arcadeCapture.session;
+    for (let n = 0; n < 3; n++) {
+      const item = challengeTwo.nextItem();
+      challengeTwo.miss(item.uid, item);
+    }
+    expect(challengeTwo.result).toMatchObject({ mode: 'challenge', challengeId: 2, lives: 0 });
+    globalThis.__arcadeCapture.finish(challengeTwo.result);
+
+    clickAction('infinite');
+    const event = { key: 'Enter', target: nicknameInput, preventDefault: vi.fn() };
+    window.listeners.keydown(event);
+
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    expect(modal.innerHTML).toContain('Deseja reiniciar o desafio 2?');
   });
 
   it('returns from ranking to the infinite intro without changing records', async () => {

@@ -9,7 +9,7 @@ import {ResultFlow} from './systems/ResultFlow.js';
 import {InfiniteSession,ChallengeSession} from './systems/infiniteSession.js';
 import {CHALLENGES,getChallenge} from './config/infinite.js';
 import {loadChallengeProgress,registerChallengeVictory,saveChallengeScore} from './systems/challengeProgress.js';
-import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname,findNicknameEntry} from './systems/leaderboard.js';
+import {loadLeaderboard,saveInfiniteResult,saveNicknameProgress,clearLeaderboard,normalizeNickname,findNicknameProfile} from './systems/leaderboard.js';
 import {escapeHTML,hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML,challengeResultHTML,finalVictoryHTML} from './ui/arcade.js';
 import {needsLandscape,isCompactLandscape} from './systems/mobile.js';
 import './styles.css';
@@ -65,7 +65,12 @@ function finish(result){
  resultFlow.start(ended,{
   defeat:(ended.infinite&&result.reason!=='victory')||(!ended.infinite&&!result.pass),
   onStart:()=>{
-   if(ended.infinite)completedRanking=saveInfiniteResult(result,nickname);
+   if(ended.infinite)completedRanking=saveInfiniteResult({
+    ...result,
+    challengeId:ended.challengeId??result.challengeId??1,
+    wave:result.wave??ended.wave,
+    level:result.level??ended.wave??result.wave,
+   },nickname);
    if(ended.challenge)saveChallengeScore(ended.challenge.id,result.score);
    else if(!ended.tutorial)progress=saveAttempt(result);
    scene().audio?.playMusic((ended.infinite&&result.reason!=='victory')||(!ended.infinite&&!result.pass)?'gameover':'victory');
@@ -96,13 +101,13 @@ function infiniteIntro(){pendingNicknameRestart=null;screen='arcade';session=nul
 function arcadeHUD({challengeId,tag,title,countLabel,goal,message}){
  return `<section class="hud infinite-hud" data-challenge-id="${challengeId}"><div><small>${tag}</small><h2 id="wave">${title}</h2></div><div class="hud-stats"><div><small>PONTOS</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="streak">0</strong></div><div><small>${countLabel}</small><strong id="count">0</strong></div><div><small>VIDAS</small><span id="lives" data-value="3">${hearts(3)}</span></div>${button('Pausar','pause')}</div></section><div class="mission"><span id="wave-goal">${goal}</span><div><i id="progress-bar"></i></div></div><div id="wave-banner" role="status" aria-live="polite"></div><div class="coach">${eco('guide')}<div><b>ECO · CENTRAL DE TRIAGEM</b><p id="feedback">${message}</p></div></div><div class="bottom-controls"><strong id="selected-item" aria-live="polite">Toque em um resíduo</strong><span><kbd>1–5</kbd> separar · <kbd>Tab</kbd> selecionar · <kbd>Esc</kbd> pausar</span>${button('Retirar restos','prepare','small')}${button('Repetir dica','hint','small')}</div>`;
 }
-function startInfinite(challengeId=1,allowExistingNickname=false){
+function startInfinite(challengeId=1,{skipNicknameConfirm=false}={}){
  const input=document.querySelector('#nickname');
  const chosenNickname=normalizeNickname(input?.value??nickname);
- if(!allowExistingNickname){
-  const existing=findNicknameEntry(chosenNickname);
-  if(existing){
-   pendingNicknameRestart=existing.challengeId??1;
+ if(!skipNicknameConfirm&&screen==='arcade'){
+  const existing=findNicknameProfile(chosenNickname);
+  if(existing.entry){
+   pendingNicknameRestart=existing.stoppedChallengeId??1;
    nickname=chosenNickname;
    dialog('Apelido encontrado',`Deseja reiniciar o desafio ${pendingNicknameRestart}?`,[['SIM','confirmNicknameRestart','primary arcade-primary'],['NÃO','cancelNicknameRestart']]);
    return;
@@ -175,7 +180,9 @@ function nextChallenge(){
  if(!next)return;
  if(!session.finished){saveChallengeScore(session.challenge.id,session.score);session.finish('abort');}
  document.querySelector('#modal')?.remove();
- startInfinite(next);
+ const profile=saveNicknameProgress(nickname,next,1,1);
+ if(profile.notice)toast(profile.notice);
+ startInfinite(next,{skipNicknameConfirm:true});
 }
 function finishInfinite(result){
  const ranking=completedRanking;screen='arcade-result';
@@ -209,7 +216,7 @@ const actions={
  export:()=>{const blob=new Blob([exportCSV(progress.history)],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='trilha-seletiva-resultados.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},
  clearRanking:()=>dialog('Limpar os recordes?','Somente as dez marcas do Desafio Infinito serão removidas. Sua campanha será preservada.',[['Cancelar','leaderboard'],['Limpar recordes','confirmClearRanking']]),
  confirmClearRanking:()=>{clearLeaderboard();leaderboard();},
- confirmNicknameRestart:()=>{const challengeId=pendingNicknameRestart;if(challengeId===null)return;pendingNicknameRestart=null;document.querySelector('#modal')?.remove();startInfinite(challengeId,true);},
+ confirmNicknameRestart:()=>{const challengeId=pendingNicknameRestart;if(challengeId===null)return;pendingNicknameRestart=null;document.querySelector('#modal')?.remove();startInfinite(challengeId,{skipNicknameConfirm:true});},
  cancelNicknameRestart:()=>{pendingNicknameRestart=null;document.querySelector('#modal')?.remove();document.querySelector('#nickname')?.focus();},
  reset:()=>dialog('REINICIAR SUA JORNADA?','Todas as fases serão bloqueadas novamente e seu progresso na campanha será apagado. Você começará pela primeira fase. Deseja continuar?',[['CANCELAR','cancelReset'],['SIM, REINICIAR','confirmReset']]),
  cancelReset:()=>{document.querySelector('#modal')?.remove();document.querySelector('[data-action=reset]')?.focus();},

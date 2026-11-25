@@ -8,6 +8,8 @@ let memoryOnly = false;
 let sequence = 0;
 const clone = value => JSON.parse(JSON.stringify(value));
 const integer = value => Number.isSafeInteger(value) && value >= 0;
+const positiveInteger = value => Number.isSafeInteger(value) && value >= 1;
+const validChallengeId = value => positiveInteger(value) && value <= 3;
 
 export function normalizeNickname(value) {
   const text = typeof value === 'string' ? value.replace(/[\u0000-\u001f\u007f]/g, '').trim() : '';
@@ -19,15 +21,30 @@ export function isNicknameTaken(nickname, entries = loadLeaderboard()) {
 }
 
 export function findNicknameEntry(nickname, entries = loadLeaderboard()) {
+  return findNicknameProfile(nickname, entries).entry;
+}
+
+export function findNicknameProfile(nickname, entries = loadLeaderboard()) {
   const rankingEntries = Array.isArray(entries) ? entries : entries.entries;
   const normalized = normalizeNickname(nickname).toLowerCase();
-  return rankingEntries.find(entry => normalizeNickname(entry.nickname).toLowerCase() === normalized) ?? null;
+  const matches = rankingEntries.filter(entry => normalizeNickname(entry.nickname).toLowerCase() === normalized);
+  const challengeIds = matches.flatMap(entry => [entry.stoppedChallengeId, entry.highestChallengeId, entry.challengeId].filter(validChallengeId));
+  return {
+    entry: matches[0] ?? null,
+    entries: matches,
+    stoppedChallengeId: challengeIds.length ? Math.max(...challengeIds) : 1,
+  };
 }
 
 function validEntry(value) {
   return value && typeof value.id === 'string' && value.id.length <= 100 &&
     typeof value.nickname === 'string' && value.nickname === normalizeNickname(value.nickname) &&
-    (value.challengeId === undefined || Number.isSafeInteger(value.challengeId) && value.challengeId >= 1 && value.challengeId <= 3) &&
+    (value.challengeId === undefined || validChallengeId(value.challengeId)) &&
+    (value.stoppedChallengeId === undefined || validChallengeId(value.stoppedChallengeId)) &&
+    (value.highestChallengeId === undefined || validChallengeId(value.highestChallengeId)) &&
+    (value.level === undefined || positiveInteger(value.level)) &&
+    (value.stoppedWave === undefined || positiveInteger(value.stoppedWave)) &&
+    (value.stoppedLevel === undefined || positiveInteger(value.stoppedLevel)) &&
     integer(value.score) && Number.isSafeInteger(value.wave) && value.wave >= 1 &&
     integer(value.maxStreak) && integer(value.correct) && integer(value.wrong) && integer(value.missed) &&
     integer(value.total) && value.total > 0 && value.correct + value.wrong + value.missed === value.total &&
@@ -76,13 +93,52 @@ function entryFromResult(result, nickname) {
   // Vitória final do Desafio 3: a partida acaba com vidas sobrando, e cada vida perdida veio de um erro ou item perdido.
   const won = result.reason === 'victory' && result.won === true && result.lives > 0 && result.lives <= 3 && result.wrong + result.missed === 3 - result.lives;
   if (!lost && !won) return null;
+  const challengeId = result.challengeId ?? 1;
+  const level = result.level ?? result.wave;
   const entry = {
     id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${++sequence}-${Math.random().toString(36).slice(2, 12)}`,
-    nickname: normalizeNickname(nickname), challengeId: result.challengeId ?? 1, score: result.score, wave: result.wave,
+    nickname: normalizeNickname(nickname), challengeId, highestChallengeId: challengeId,
+    stoppedChallengeId: challengeId, score: result.score, wave: result.wave, level,
+    stoppedWave: result.wave, stoppedLevel: level,
     maxStreak: result.maxStreak, correct: result.correct, wrong: result.wrong,
     missed: result.missed, total: result.total, precision: result.precision, date: result.date,
   };
   return validEntry(entry) ? entry : null;
+}
+
+function updateStoppedProfile(entries, result) {
+  const normalized = normalizeNickname(result.nickname).toLowerCase();
+  let changed = false;
+  const updatedEntries = entries.map(entry => {
+    if (normalizeNickname(entry.nickname).toLowerCase() !== normalized) return entry;
+    const highestChallengeId = Math.max(
+      result.challengeId,
+      ...[entry.challengeId, entry.stoppedChallengeId, entry.highestChallengeId].filter(validChallengeId),
+    );
+    const next = {
+      ...entry,
+      highestChallengeId,
+      stoppedChallengeId: result.challengeId,
+      stoppedWave: result.wave,
+      stoppedLevel: result.level,
+    };
+    if (next.highestChallengeId !== entry.highestChallengeId ||
+        next.stoppedChallengeId !== entry.stoppedChallengeId ||
+        next.stoppedWave !== entry.stoppedWave ||
+        next.stoppedLevel !== entry.stoppedLevel) changed = true;
+    return next;
+  });
+  return { entries: updatedEntries, changed };
+}
+
+export function saveNicknameProgress(nickname, challengeId, wave = 1, level = wave) {
+  if (!validChallengeId(challengeId) || !positiveInteger(wave) || !positiveInteger(level)) {
+    throw new TypeError('Progresso de desafio inválido.');
+  }
+  const current = loadLeaderboard();
+  const updated = updateStoppedProfile(current.entries, { nickname, challengeId, wave, level });
+  if (!updated.changed) return { ...current, updated: false };
+  return { ...persist(updated.entries), updated: true };
 }
 
 export function saveInfiniteResult(result, nickname) {
@@ -90,7 +146,9 @@ export function saveInfiniteResult(result, nickname) {
   const entry = entryFromResult(result, nickname);
   if (!entry) return { ...current, position: null, newRecord: false, status: 'invalid-result', saved: false };
   if (isNicknameTaken(entry.nickname, current.entries)) {
-    return { ...current, position: null, newRecord: false, status: 'nickname-taken', saved: false };
+    const updated = updateStoppedProfile(current.entries, entry);
+    const profile = updated.changed ? persist(updated.entries) : current;
+    return { ...profile, position: null, newRecord: false, status: 'nickname-taken', saved: false };
   }
   const newRecord = entry.score > (current.entries[0]?.score ?? 0);
   const saved = persist([...current.entries, entry]);
