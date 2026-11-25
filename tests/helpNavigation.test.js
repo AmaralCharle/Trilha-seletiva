@@ -350,12 +350,111 @@ describe('screen navigation', () => {
     expect(setItem).not.toHaveBeenCalled();
   });
 
-  it('keeps duplicate nickname validation on the active progressive challenge', async () => {
+  it('asks before restarting the recorded challenge and keeps the intro when choosing no', async () => {
     const rankingKey = 'trilha-seletiva-infinite-v1';
     const rankingSave = JSON.stringify({
       version: 1,
       entries: [{
         id: 'existing-entry',
+        nickname: 'Equipe',
+        challengeId: 2,
+        score: 10,
+        wave: 1,
+        maxStreak: 1,
+        correct: 1,
+        wrong: 0,
+        missed: 0,
+        total: 1,
+        precision: 1,
+        date: '2026-11-20T00:00:00.000Z',
+      }],
+    });
+    memory.set(rankingKey, rankingSave);
+    const nicknameInput = {
+      value: 'Equipe',
+      focus: vi.fn(),
+    };
+    const documentObject = globalThis.document;
+    const querySelector = documentObject.querySelector.bind(documentObject);
+    documentObject.querySelector = selector => {
+      if (selector === '#nickname') return nicknameInput;
+      return querySelector(selector);
+    };
+
+    await import('../src/main.js');
+    clickAction('infinite');
+
+    expect(ui.dataset.screen).toBe('arcade');
+    expect(ui.innerHTML).not.toContain('nickname-error');
+
+    clickAction('beginInfinite', { challenge: '1' });
+
+    expect(modal.innerHTML).toContain('Deseja reiniciar o desafio 2?');
+    expect(modal.innerHTML).toContain('data-action="confirmNicknameRestart">SIM</button>');
+    expect(modal.innerHTML).toContain('data-action="cancelNicknameRestart">NÃO</button>');
+
+    clickAction('cancelNicknameRestart');
+
+    expect(ui.dataset.screen).toBe('arcade');
+    expect(ui.innerHTML).toContain('data-action="beginInfinite"');
+    expect(nicknameInput.value).toBe('Equipe');
+    expect(nicknameInput.focus).toHaveBeenCalledOnce();
+    expect(modal).toBeNull();
+    expect(memory.get(rankingKey)).toBe(rankingSave);
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it('restarts the challenge saved for a duplicate nickname with a fresh session', async () => {
+    const rankingKey = 'trilha-seletiva-infinite-v1';
+    const rankingSave = JSON.stringify({
+      version: 1,
+      entries: [{
+        id: 'existing-entry',
+        nickname: 'Equipe',
+        challengeId: 2,
+        score: 10,
+        wave: 1,
+        maxStreak: 1,
+        correct: 1,
+        wrong: 0,
+        missed: 0,
+        total: 1,
+        precision: 1,
+        date: '2026-11-20T00:00:00.000Z',
+      }],
+    });
+    memory.set(rankingKey, rankingSave);
+    memory.set('trilha-seletiva-desafios-v1', JSON.stringify({ version: 1, unlocked: [1, 2], best: {} }));
+    const nicknameInput = { value: ' equipe ' };
+    const documentObject = globalThis.document;
+    const querySelector = documentObject.querySelector.bind(documentObject);
+    documentObject.querySelector = selector => selector === '#nickname' ? nicknameInput : querySelector(selector);
+
+    await import('../src/main.js');
+    clickAction('infinite');
+    clickAction('beginInfinite', { challenge: '1' });
+    expect(modal.innerHTML).toContain('Deseja reiniciar o desafio 2?');
+
+    clickAction('confirmNicknameRestart');
+
+    expect(ui.dataset.screen).toBe('play');
+    expect(ui.innerHTML).toContain('data-challenge-id="2"');
+    expect(ui.innerHTML).toContain('<h2 id="wave">Nível 1</h2>');
+    expect(ui.innerHTML).toContain('<strong id="score">0</strong>');
+    expect(ui.innerHTML).toContain('<strong id="streak">0</strong>');
+    expect(ui.innerHTML).toContain('<span id="lives" data-value="3">');
+    expect(ui.innerHTML).toContain('aria-label="3 de 3 vidas"');
+    expect(modal).toBeNull();
+    expect(memory.get(rankingKey)).toBe(rankingSave);
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it('restarts legacy duplicate records without a challengeId at challenge one', async () => {
+    const rankingKey = 'trilha-seletiva-infinite-v1';
+    const rankingSave = JSON.stringify({
+      version: 1,
+      entries: [{
+        id: 'legacy-entry',
         nickname: 'Equipe',
         score: 10,
         wave: 1,
@@ -369,36 +468,20 @@ describe('screen navigation', () => {
       }],
     });
     memory.set(rankingKey, rankingSave);
-    const challengeOne = { disabled: false };
-    const error = { textContent: '', hidden: true };
-    const nicknameInput = {
-      value: 'Equipe',
-      attributes: {},
-      setAttribute(name, value) { this.attributes[name] = value; },
-      focus: vi.fn(),
-    };
     const documentObject = globalThis.document;
     const querySelector = documentObject.querySelector.bind(documentObject);
-    documentObject.querySelector = selector => {
-      if (selector === '#nickname') return nicknameInput;
-      if (selector === '#nickname-error') return error;
-      if (selector === '[data-challenge="1"]') return challengeOne;
-      return querySelector(selector);
-    };
+    documentObject.querySelector = selector => selector === '#nickname' ? { value: 'Equipe' } : querySelector(selector);
 
     await import('../src/main.js');
     clickAction('infinite');
-
-    expect(ui.dataset.screen).toBe('arcade');
-    expect(challengeOne.disabled).toBe(true);
-    expect(error.hidden).toBe(false);
-    expect(error.textContent).toContain('Este apelido já está no ranking');
-
     clickAction('beginInfinite', { challenge: '1' });
 
-    expect(ui.dataset.screen).toBe('arcade');
-    expect(nicknameInput.attributes['aria-invalid']).toBe('true');
-    expect(nicknameInput.focus).toHaveBeenCalled();
+    expect(modal.innerHTML).toContain('Deseja reiniciar o desafio 1?');
+    clickAction('confirmNicknameRestart');
+
+    expect(ui.dataset.screen).toBe('play');
+    expect(ui.innerHTML).toContain('data-challenge-id="1"');
+    expect(ui.innerHTML).toContain('<h2 id="wave">Nível 1</h2>');
     expect(memory.get(rankingKey)).toBe(rankingSave);
     expect(setItem).not.toHaveBeenCalled();
   });

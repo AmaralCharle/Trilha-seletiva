@@ -9,18 +9,17 @@ import {ResultFlow} from './systems/ResultFlow.js';
 import {InfiniteSession,ChallengeSession} from './systems/infiniteSession.js';
 import {CHALLENGES,getChallenge} from './config/infinite.js';
 import {loadChallengeProgress,registerChallengeVictory,saveChallengeScore} from './systems/challengeProgress.js';
-import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname,isNicknameTaken} from './systems/leaderboard.js';
+import {loadLeaderboard,saveInfiniteResult,clearLeaderboard,normalizeNickname,findNicknameEntry} from './systems/leaderboard.js';
 import {escapeHTML,hearts,arcadeIntroHTML,leaderboardHTML,arcadeResultHTML,challengeResultHTML,finalVictoryHTML} from './ui/arcade.js';
 import {needsLandscape,isCompactLandscape} from './systems/mobile.js';
 import './styles.css';
-const ui=document.querySelector('#ui');let progress=loadProgress(),session,currentLevel,review=false,screen='menu',mapReturnScreen='menu',reviewReturnScreen='menu',statsReturnScreen='menu',leaderboardReturnScreen='menu',showWasteCatalogGuide=false,nickname='Jogador',bestBefore=0,recordShown=false,seenWave=1;
+const ui=document.querySelector('#ui');let progress=loadProgress(),session,currentLevel,review=false,screen='menu',mapReturnScreen='menu',reviewReturnScreen='menu',statsReturnScreen='menu',leaderboardReturnScreen='menu',showWasteCatalogGuide=false,nickname='Jogador',bestBefore=0,recordShown=false,seenWave=1,pendingNicknameRestart=null;
 const game=new Phaser.Game({type:Phaser.AUTO,parent:'game',width:1280,height:720,backgroundColor:'#102f35',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[FactoryScene],render:{antialias:true},input:{activePointers:1}});
 const scene=()=>game.scene.getScene('Factory');
 const resultFlow=new ResultFlow();let completedRanking=null;
 const names={paper:'Papel',plastic:'Plástico',glass:'Vidro',metal:'Metal',reject:'Rejeito'};
 const guideCategories=['paper','plastic','glass','metal','reject'];
 const binColorNames={paper:'azul',plastic:'vermelha',glass:'verde',metal:'amarela',reject:'cinza'};
-const nicknameTakenMessage='Este apelido já está no ranking. Escolha outro nome.';
 const eco=(pose='idle')=>`<img class="eco" data-pose="${pose}" src="${svgURL(ecoPoseSVG(pose))}" alt="Eco, robô instrutor">`;
 const starPath='M32 4 40.3 21 59 23.7 45.5 36.9 48.7 55.5 32 46.7 15.3 55.5 18.5 36.9 5 23.7 23.7 21Z';
 const stars=(count,large=false)=>`<span class="stars${large?' large':''}" role="img" aria-label="${count} de 3 estrelas">${[0,1,2].map(i=>`<svg viewBox="0 0 64 64" aria-hidden="true" class="star ${i<count?'earned':'empty'}" style="--star-index:${i}"><path class="star-edge" d="${starPath}"/><path class="star-face" d="${starPath}"/><path class="star-shine" d="M31 12 35 23 24 24Z"/></svg>`).join('')}</span>`;
@@ -93,27 +92,21 @@ function credits(){screen='credits';idleScene();render(`<section class="panel"><
 function dialog(title,text,actions){document.querySelector('#modal')?.remove();const el=document.createElement('div');el.id='modal';el.className='modal';el.innerHTML=`<section class="panel" role="dialog" aria-modal="true" aria-label="${title}"><h2>${title}</h2><p>${text}</p><div class="actions">${actions.map(([t,a,cls])=>button(t,a,cls??(a==='resume'?'primary':''))).join('')}</div></section>`;ui.append(el);el.querySelector('button').focus();}
 function pause(){if(screen!=='play'||session.paused)return;scene().cancelDrag();session.paused=true;scene().audio?.pause();scene().tweens.pauseAll();dialog('Uma pausa para respirar','A esteira e o relógio estão parados. Sua missão espera por você.',[['Continuar','resume'],[session.infinite?'Reiniciar desafio':'Reiniciar fase','restart'],[session.infinite||review||session.tutorial?'Voltar':'Voltar à trilha','abandon'],[progress.settings.sound?'Desligar sons':'Ligar sons','pauseSound'],...(document.fullscreenEnabled?[[document.fullscreenElement?'Sair da tela cheia':'Tela cheia','fullscreen']]:[])]);}
 function resume(){if(needsLandscape(window.innerWidth,window.innerHeight)){toast('Gire o aparelho para continuar a missão.');return;}document.querySelector('#modal')?.remove();if(session){session.paused=false;scene().tweens.resumeAll();scene().audio?.resume();if(session.won)showNextChallengeButton();}}
-function validateNickname(input=document.querySelector('#nickname')){
- if(!input)return !isNicknameTaken(nickname);
- const taken=isNicknameTaken(input.value);
- const message=document.querySelector('#nickname-error');
- if(message){message.textContent=taken?nicknameTakenMessage:'';message.hidden=!taken;}
- input.setAttribute('aria-invalid',String(taken));
- const begin=document.querySelector('[data-challenge="1"]');
- if(begin)begin.disabled=taken;
- return !taken;
-}
-function infiniteIntro(){screen='arcade';session=null;idleScene();const rank=loadLeaderboard();render(arcadeIntroHTML(rank.entries,nickname,loadChallengeProgress(),CHALLENGES));validateNickname();if(rank.notice)toast(rank.notice);}
+function infiniteIntro(){pendingNicknameRestart=null;screen='arcade';session=null;idleScene();const rank=loadLeaderboard();render(arcadeIntroHTML(rank.entries,nickname,loadChallengeProgress(),CHALLENGES));if(rank.notice)toast(rank.notice);}
 function arcadeHUD({challengeId,tag,title,countLabel,goal,message}){
  return `<section class="hud infinite-hud" data-challenge-id="${challengeId}"><div><small>${tag}</small><h2 id="wave">${title}</h2></div><div class="hud-stats"><div><small>PONTOS</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="streak">0</strong></div><div><small>${countLabel}</small><strong id="count">0</strong></div><div><small>VIDAS</small><span id="lives" data-value="3">${hearts(3)}</span></div>${button('Pausar','pause')}</div></section><div class="mission"><span id="wave-goal">${goal}</span><div><i id="progress-bar"></i></div></div><div id="wave-banner" role="status" aria-live="polite"></div><div class="coach">${eco('guide')}<div><b>ECO · CENTRAL DE TRIAGEM</b><p id="feedback">${message}</p></div></div><div class="bottom-controls"><strong id="selected-item" aria-live="polite">Toque em um resíduo</strong><span><kbd>1–5</kbd> separar · <kbd>Tab</kbd> selecionar · <kbd>Esc</kbd> pausar</span>${button('Retirar restos','prepare','small')}${button('Repetir dica','hint','small')}</div>`;
 }
-function startInfinite(challengeId=1){
+function startInfinite(challengeId=1,allowExistingNickname=false){
  const input=document.querySelector('#nickname');
  const chosenNickname=normalizeNickname(input?.value??nickname);
- if(isNicknameTaken(chosenNickname)){
-  if(input){validateNickname(input);input.focus();}
-  else infiniteIntro();
-  return;
+ if(!allowExistingNickname){
+  const existing=findNicknameEntry(chosenNickname);
+  if(existing){
+   pendingNicknameRestart=existing.challengeId??1;
+   nickname=chosenNickname;
+   dialog('Apelido encontrado',`Deseja reiniciar o desafio ${pendingNicknameRestart}?`,[['SIM','confirmNicknameRestart','primary arcade-primary'],['NÃO','cancelNicknameRestart']]);
+   return;
+  }
  }
  const challenge=getChallenge(challengeId);
  if(challenge&&!loadChallengeProgress().unlocked.includes(challengeId)){infiniteIntro();return;}
@@ -216,12 +209,14 @@ const actions={
  export:()=>{const blob=new Blob([exportCSV(progress.history)],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='trilha-seletiva-resultados.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},
  clearRanking:()=>dialog('Limpar os recordes?','Somente as dez marcas do Desafio Infinito serão removidas. Sua campanha será preservada.',[['Cancelar','leaderboard'],['Limpar recordes','confirmClearRanking']]),
  confirmClearRanking:()=>{clearLeaderboard();leaderboard();},
+ confirmNicknameRestart:()=>{const challengeId=pendingNicknameRestart;if(challengeId===null)return;pendingNicknameRestart=null;document.querySelector('#modal')?.remove();startInfinite(challengeId,true);},
+ cancelNicknameRestart:()=>{pendingNicknameRestart=null;document.querySelector('#modal')?.remove();document.querySelector('#nickname')?.focus();},
  reset:()=>dialog('REINICIAR SUA JORNADA?','Todas as fases serão bloqueadas novamente e seu progresso na campanha será apagado. Você começará pela primeira fase. Deseja continuar?',[['CANCELAR','cancelReset'],['SIM, REINICIAR','confirmReset']]),
  cancelReset:()=>{document.querySelector('#modal')?.remove();document.querySelector('[data-action=reset]')?.focus();},
  confirmReset:()=>{resultFlow.cancel();session=null;progress=resetProgress();scene().audio?.setSettings(progress.settings);map();toast('Trilha reiniciada! Sua jornada começa na primeira fase.');}
 };
 ui.addEventListener('click',e=>{scene().audio?.unlock();const a=e.target.closest('[data-action]');if(a){e.preventDefault();if(a.dataset.challenge)actions[a.dataset.action]?.(Number(a.dataset.challenge));else actions[a.dataset.action]?.();}const l=e.target.closest('[data-level]');if(l&&!l.disabled)start(Number(l.dataset.level));});
-ui.addEventListener('input',e=>{if(e.target.id==='nickname'){validateNickname(e.target);return;}const keys={'music-volume':'musicVolume','effects-volume':'effectsVolume'},key=keys[e.target.id];if(key){progress=saveSettings({...progress.settings,[key]:Number(e.target.value)});scene().audio?.setSettings(progress.settings);document.querySelector(key==='musicVolume'?'#music-value':'#effects-value').textContent=Math.round(Number(e.target.value)*100)+'%';}});
+ui.addEventListener('input',e=>{const keys={'music-volume':'musicVolume','effects-volume':'effectsVolume'},key=keys[e.target.id];if(key){progress=saveSettings({...progress.settings,[key]:Number(e.target.value)});scene().audio?.setSettings(progress.settings);document.querySelector(key==='musicVolume'?'#music-value':'#effects-value').textContent=Math.round(Number(e.target.value)*100)+'%';}});
 window.addEventListener('keydown',e=>{const modal=document.querySelector('#modal');if(modal&&e.key==='Tab'){const controls=[...modal.querySelectorAll('button,input,a')];const first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}return;}if(screen==='result-intro'&&['Escape','Enter',' '].includes(e.key)){e.preventDefault();resultFlow.skip();return;}if(e.key==='Escape'&&document.querySelector('#modal')&&screen!=='play'){actions.cancelReset();return;}if(e.key==='Escape'&&screen==='play'){session.paused?resume():pause();}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});
 window.addEventListener('blur',()=>pause());

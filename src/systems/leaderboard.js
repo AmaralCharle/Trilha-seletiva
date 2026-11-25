@@ -15,14 +15,19 @@ export function normalizeNickname(value) {
 }
 
 export function isNicknameTaken(nickname, entries = loadLeaderboard()) {
+  return Boolean(findNicknameEntry(nickname, entries));
+}
+
+export function findNicknameEntry(nickname, entries = loadLeaderboard()) {
   const rankingEntries = Array.isArray(entries) ? entries : entries.entries;
   const normalized = normalizeNickname(nickname).toLowerCase();
-  return rankingEntries.some(entry => normalizeNickname(entry.nickname).toLowerCase() === normalized);
+  return rankingEntries.find(entry => normalizeNickname(entry.nickname).toLowerCase() === normalized) ?? null;
 }
 
 function validEntry(value) {
   return value && typeof value.id === 'string' && value.id.length <= 100 &&
     typeof value.nickname === 'string' && value.nickname === normalizeNickname(value.nickname) &&
+    (value.challengeId === undefined || Number.isSafeInteger(value.challengeId) && value.challengeId >= 1 && value.challengeId <= 3) &&
     integer(value.score) && Number.isSafeInteger(value.wave) && value.wave >= 1 &&
     integer(value.maxStreak) && integer(value.correct) && integer(value.wrong) && integer(value.missed) &&
     integer(value.total) && value.total > 0 && value.correct + value.wrong + value.missed === value.total &&
@@ -73,7 +78,7 @@ function entryFromResult(result, nickname) {
   if (!lost && !won) return null;
   const entry = {
     id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${++sequence}-${Math.random().toString(36).slice(2, 12)}`,
-    nickname: normalizeNickname(nickname), score: result.score, wave: result.wave,
+    nickname: normalizeNickname(nickname), challengeId: result.challengeId ?? 1, score: result.score, wave: result.wave,
     maxStreak: result.maxStreak, correct: result.correct, wrong: result.wrong,
     missed: result.missed, total: result.total, precision: result.precision, date: result.date,
   };

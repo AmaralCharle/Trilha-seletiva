@@ -97,7 +97,7 @@ export class InfiniteSession {
     if (reason !== 'abort' && reason !== 'victory' && this.lives > 0) return null;
     this.finished = true;
     this.result = {
-      mode: 'infinite', score: this.score, wave: this.wave, maxStreak: this.maxStreak,
+      mode: 'infinite', challengeId: this.challengeId, score: this.score, wave: this.wave, maxStreak: this.maxStreak,
       correct: this.correct, wrong: this.wrong, missed: this.missed,
       total: this.resolvedCount, precision: this.precision,
       date: this.now(), elapsed: this.elapsed, reason,

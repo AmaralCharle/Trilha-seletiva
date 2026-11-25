@@ -154,9 +154,6 @@ body.compact-play #ui .bottom-controls>button[data-action=hint]{grid-column:3}
 
 body.compact-play #ui .coach.error p{color:#8b4536}
 
-.nickname-label input[aria-invalid=true]{border-color:#b24f41;box-shadow:0 0 0 2px #b24f4122}
-.nickname-error{flex:0 0 100%;min-width:0;margin-top:-8px;color:#a23f34;font-size:12px;font-weight:bold;line-height:1.35;overflow-wrap:anywhere}
-.nickname-error[hidden]{display:none}
 @media(max-height:540px) and (min-aspect-ratio:7/5){
  #ui .arcade-intro{top:3%;width:94%;max-height:94%;padding:6px 18px}
  #ui .arcade-intro .arcade-badge{margin-bottom:3px}
